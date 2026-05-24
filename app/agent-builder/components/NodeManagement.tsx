@@ -82,6 +82,7 @@ type NodeManagementProps = {
   setLog: (updater: (prev: string[]) => string[]) => void;
   nodeTypeCategory: (nodeType: string) => string;
   isNodeConfigured: (node: Node<any>) => boolean;
+  executionResults?: Record<string, any> | null;
 };
 
 export function NodeManagement({
@@ -125,6 +126,7 @@ export function NodeManagement({
   setLog,
   nodeTypeCategory,
   isNodeConfigured,
+  executionResults,
 }: NodeManagementProps) {
   const { user, signInWithGoogleForService } = useAuth();
   const [availableSpreadsheets, setAvailableSpreadsheets] = useState<
@@ -342,7 +344,12 @@ export function NodeManagement({
     user?.id,
   ]);
 
-  const { availableVariables } = useVariablePicker(selectedNodeId ?? '', nodes, edges);
+  const { availableVariables } = useVariablePicker(
+    selectedNodeId ?? '',
+    nodes,
+    edges,
+    executionResults ?? undefined
+  );
 
   const renderVariableInput = ({
     label,
@@ -379,6 +386,7 @@ export function NodeManagement({
       availableVariables={availableVariables}
       type={type}
       className={className}
+      executionResults={executionResults}
     />
   );
 
@@ -417,6 +425,7 @@ export function NodeManagement({
       availableVariables={availableVariables}
       rows={rows}
       className={className}
+      executionResults={executionResults}
     />
   );
 
@@ -519,24 +528,70 @@ export function NodeManagement({
       };
 
       return (
-        <div key={`${node.id}-${key}`}>
+        <div
+          key={`${node.id}-${key}`}
+          className="rounded-[12px] border border-[var(--color-border)] bg-slate-50/90 p-4 transition-all duration-200 dark:bg-slate-900/80 dark:border-slate-700/70"
+          style={{
+            padding: '16px',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.borderColor = '#667eea';
+            (e.currentTarget as HTMLElement).style.boxShadow =
+              '0 0 0 2px rgba(102, 126, 234, 0.05)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
+            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+          }}
+        >
           {field.t === 'checkbox' || field.t === 'boolean' ? (
-            <div className="flex items-center gap-2 mt-2">
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+              }}
+            >
               <input
                 type="checkbox"
                 checked={Boolean(value)}
                 onChange={e => updateValue(e.target.checked)}
                 className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-xs text-slate-700 dark:text-slate-300">
-                {field.h || field.l}
-              </span>
-            </div>
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)' }}
+                >
+                  {field.l}
+                </div>
+                {field.h && (
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      color: 'var(--color-muted-foreground)',
+                      marginTop: '4px',
+                    }}
+                  >
+                    {field.h}
+                  </div>
+                )}
+              </div>
+            </label>
           ) : field.t === 'select' ? (
             <>
-              <Label className="text-xs font-medium text-slate-600 dark:text-slate-300">
+              <Label
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: 'var(--color-foreground)',
+                  marginBottom: '8px',
+                }}
+              >
                 {field.l}
-                {field.required !== false ? ' *' : ''}
+                {field.required !== false && (
+                  <span style={{ color: '#ef4444', marginLeft: '4px' }}>•</span>
+                )}
               </Label>
               {(() => {
                 const provider =
@@ -595,10 +650,18 @@ export function NodeManagement({
               className="mt-1 h-40"
             />
           ) : field.t === 'multiselect' ? (
-            <div className="space-y-2">
-              <Label className="text-xs font-medium text-slate-600 dark:text-slate-300">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Label
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: 'var(--color-foreground)',
+                }}
+              >
                 {field.l}
-                {field.required !== false ? ' *' : ''}
+                {field.required !== false && (
+                  <span style={{ color: '#ef4444', marginLeft: '4px' }}>•</span>
+                )}
               </Label>
               {(field.o?.length
                 ? field.o
@@ -609,7 +672,28 @@ export function NodeManagement({
                 return (
                   <label
                     key={option}
-                    className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      cursor: 'pointer',
+                      padding: '8px 10px',
+                      borderRadius: '10px',
+                      transition: 'all 0.2s ease',
+                      background: isChecked ? 'rgba(102, 126, 234, 0.05)' : 'transparent',
+                      border: isChecked
+                        ? '1px solid rgba(102, 126, 234, 0.2)'
+                        : '1px solid transparent',
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.background =
+                        'rgba(102, 126, 234, 0.03)';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = isChecked
+                        ? 'rgba(102, 126, 234, 0.05)'
+                        : 'transparent';
+                    }}
                   >
                     <input
                       type="checkbox"
@@ -622,7 +706,9 @@ export function NodeManagement({
                       }}
                       className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
-                    {option}
+                    <span style={{ fontSize: '13px', color: 'var(--color-foreground)' }}>
+                      {option}
+                    </span>
                   </label>
                 );
               })}
@@ -641,13 +727,32 @@ export function NodeManagement({
               className="mt-1"
             />
           ) : field.t === 'number' ? (
-            <Input
-              type="number"
-              value={value === false ? '' : String(value)}
-              onChange={e => updateValue(Number(e.target.value))}
-              placeholder={field.h}
-              className="mt-1"
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: 'var(--color-foreground)',
+                }}
+              >
+                {field.l}
+                {field.required !== false && (
+                  <span style={{ color: '#ef4444', marginLeft: '4px' }}>•</span>
+                )}
+              </label>
+              <Input
+                type="number"
+                value={value === false ? '' : String(value)}
+                onChange={e => updateValue(Number(e.target.value))}
+                placeholder={field.h}
+                className="mt-1"
+              />
+              {field.h && (
+                <p style={{ fontSize: '12px', color: 'var(--color-muted-foreground)', margin: 0 }}>
+                  {field.h}
+                </p>
+              )}
+            </div>
           ) : (
             <VariableInput
               label={field.l}
@@ -661,9 +766,6 @@ export function NodeManagement({
               className="mt-1"
             />
           )}
-          {field.h && field.t !== 'checkbox' && field.t !== 'select' && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{field.h}</p>
-          )}
         </div>
       );
     };
@@ -672,7 +774,7 @@ export function NodeManagement({
       const metadata = getNodeTypeMetadata(node.type);
       if (!metadata?.configs?.length) return null;
       return (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {metadata.configs.map(field => renderConfigField(node, field)).filter(Boolean)}
         </div>
       );
@@ -3260,13 +3362,22 @@ export function NodeManagement({
             </div>
 
             <div className="space-y-4 overflow-y-auto max-h-[calc(100%-60px)] pr-2">
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-200/50 dark:border-purple-700/50">
-                <Label
+              {/* Node Label Section */}
+              <div className="rounded-[14px] border-2 border-slate-200/70 bg-slate-50/90 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/90">
+                <label
                   htmlFor="node-label"
-                  className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block"
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: 'var(--color-foreground)',
+                    marginBottom: '8px',
+                    display: 'block',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}
                 >
-                  Node Label
-                </Label>
+                  📝 Node Label
+                </label>
                 <Input
                   id="node-label"
                   value={selectedNode.data?.label || ''}
@@ -3280,56 +3391,154 @@ export function NodeManagement({
                     );
                   }}
                   className="w-full bg-white/80 dark:bg-slate-800/80 border-purple-300 dark:border-purple-600 focus:border-purple-500 focus:ring-purple-500 transition-all duration-200"
-                  placeholder="Enter node label..."
+                  placeholder="Give your node a clear, descriptive name..."
                 />
               </div>
 
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-700/50">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              {/* Configuration Section */}
+              <div className="rounded-[14px] border-2 border-sky-200/70 bg-slate-50/90 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/90">
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    marginBottom: '16px',
+                  }}
+                >
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-100">
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <Badge
+                        style={{
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          color: '#fff',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                        }}
+                      >
                         {nodeTypeCategory(selectedNode.type || '')}
                       </Badge>
                       <span
-                        className={`text-xs font-semibold ${isNodeConfigured(selectedNode) ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          color: isNodeConfigured(selectedNode) ? '#10b981' : '#ef4444',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
                       >
-                        {isNodeConfigured(selectedNode) ? 'Configured' : 'Missing required values'}
+                        <span
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: isNodeConfigured(selectedNode) ? '#10b981' : '#ef4444',
+                            display: 'inline-block',
+                          }}
+                        />
+                        {isNodeConfigured(selectedNode) ? 'Configured' : 'Incomplete'}
                       </span>
                     </div>
-                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    <h4
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: 'var(--color-foreground)',
+                        margin: 0,
+                      }}
+                    >
                       {selectedNode.data.label}
                     </h4>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-3 h-3 rounded-full ${isNodeConfigured(selectedNode) ? 'bg-emerald-500' : 'bg-rose-500'}`}
-                    />
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      {selectedNode.type}
-                    </span>
-                  </div>
                 </div>
-                {renderNodeConfigForm(selectedNode)}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {renderNodeConfigForm(selectedNode)}
+                </div>
               </div>
 
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-green-200/50 dark:border-green-700/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    Node Info
+              {/* Node Info Section */}
+              <div className="rounded-[14px] border-2 border-emerald-200/70 bg-slate-50/90 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/90">
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#10b981',
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: 'var(--color-foreground)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    ℹ️ Node Details
                   </span>
                 </div>
-                <div className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
-                  <div>
-                    <strong>ID:</strong> {selectedNode.id}
-                  </div>
-                  <div>
-                    <strong>Type:</strong> {selectedNode.type}
-                  </div>
-                  <div>
-                    <strong>Position:</strong> ({Math.round(selectedNode.position?.x ?? 0)},{' '}
-                    {Math.round(selectedNode.position?.y ?? 0)})
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    fontSize: '12px',
+                    color: 'var(--color-muted-foreground)',
+                  }}
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '12px' }}>
+                    <strong
+                      style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-foreground)' }}
+                    >
+                      ID:
+                    </strong>
+                    <span
+                      style={{ fontFamily: 'var(--font-mono)', color: '#667eea', fontWeight: 600 }}
+                    >
+                      {selectedNode.id}
+                    </span>
+
+                    <strong
+                      style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-foreground)' }}
+                    >
+                      Type:
+                    </strong>
+                    <span
+                      style={{ fontFamily: 'var(--font-mono)', color: '#667eea', fontWeight: 600 }}
+                    >
+                      {selectedNode.type}
+                    </span>
+
+                    <strong
+                      style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-foreground)' }}
+                    >
+                      Position:
+                    </strong>
+                    <span
+                      style={{ fontFamily: 'var(--font-mono)', color: '#667eea', fontWeight: 600 }}
+                    >
+                      ({Math.round(selectedNode.position?.x ?? 0)},{' '}
+                      {Math.round(selectedNode.position?.y ?? 0)})
+                    </span>
                   </div>
                 </div>
               </div>

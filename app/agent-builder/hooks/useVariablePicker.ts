@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Edge, Node } from 'reactflow';
+import { availableNodeTypes } from '../constants/nodeTypes';
 
 export interface VariableOption {
   nodeId: string;
@@ -51,6 +52,15 @@ export function useVariablePicker(
   edges: Edge[],
   executionResults?: Record<string, any>
 ) {
+  const resolvedExecutionResults =
+    executionResults &&
+    typeof executionResults === 'object' &&
+    'nodeResults' in executionResults &&
+    executionResults.nodeResults &&
+    typeof executionResults.nodeResults === 'object'
+      ? executionResults.nodeResults
+      : executionResults;
+
   const getPreviousNodes = (): Node[] => {
     const visited = new Set<string>();
     const previous: Node[] = [];
@@ -76,11 +86,41 @@ export function useVariablePicker(
     return previous;
   };
 
+  // state cache for fetched sample outputs from backend
+  const [sampleCache, setSampleCache] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    // fetch sample outputs for previous nodes that lack execution results
+    const prev = getPreviousNodes();
+    prev.forEach(node => {
+      const nodeId = node.id;
+      if (resolvedExecutionResults?.[nodeId] !== undefined) return;
+      if (sampleCache[nodeId]) return;
+
+      const nodeTypeId = node.data?.type || node.type || '';
+      const url = `http://localhost:3001/api/sample-outputs?nodeType=${encodeURIComponent(nodeTypeId)}`;
+      fetch(url)
+        .then(r => (r.ok ? r.json() : Promise.reject(new Error('fetch failed'))))
+        .then(json => {
+          if (json && json.sample) {
+            setSampleCache(prevCache => ({ ...prevCache, [nodeId]: json.sample }));
+          }
+        })
+        .catch(err => {
+          // ignore fetch errors — fallback heuristics handle it
+          // console.warn('sample fetch failed for', nodeTypeId, err.message);
+        });
+    });
+    // intentionally depend on currentNodeId/nodes/edges/executionResults
+  }, [currentNodeId, nodes, edges, executionResults]);
+
   const getVariablesForNode = (node: Node): VariableOption[] => {
     const nodeId = node.id;
     const nodeType = node.data?.type || node.type || '';
     const nodeLabel = node.data?.label || nodeId;
     const vars: VariableOption[] = [];
+
+    let synthesizedExample = false;
 
     const addVariable = (
       path: string,
@@ -95,21 +135,82 @@ export function useVariablePicker(
         nodeType,
         path: fullPath,
         displayPath: `${nodeId}.${displayPath}`,
-        description,
+        description: synthesizedExample ? 'Expected output (schema)' : description,
         category,
-        preview: getPreviewValue(executionResults, fullPath),
+        preview: synthesizedExample ? '' : getPreviewValue(resolvedExecutionResults, fullPath),
       });
     };
 
-    addVariable('output.text', 'output.text', 'Main text output', 'output');
-    addVariable('output.message', 'output.message', 'Status message', 'output');
+    let nodeResult = resolvedExecutionResults?.[nodeId] ?? sampleCache[nodeId];
 
-    if (nodeType.startsWith('ai-')) {
-      addVariable('output.text', 'output.text', 'AI generated response', 'output');
+    // If there's no runtime result, synthesize an "expected output" example
+    // based on node type metadata so users can insert variables before running.
+    if (nodeResult === undefined || nodeResult === null) {
+      const nodeTypeId = node.data?.type || node.type || '';
+      const metadata = availableNodeTypes.find(n => n.id === nodeTypeId);
+
+      const buildExampleForType = (typeId: string | undefined) => {
+        // default fallbacks
+        if (!typeId) return { output: { data: {} } };
+        const t = typeId.toString().toLowerCase();
+        if (
+          t.startsWith('ai-') ||
+          t.includes('ai') ||
+          t.includes('openai') ||
+          t.includes('gemini')
+        ) {
+          return {
+            output: { text: 'Example AI response', tokens: 123, metadata: { prompt: '...' } },
+          };
+        }
+        if (t.includes('webhook') || t.includes('trigger')) {
+          return { output: { body: { exampleField: 'value' }, headers: { 'x-id': 'abc' } } };
+        }
+        if (t.includes('http') || t.includes('fetch') || t.includes('request')) {
+          return { output: { data: { status: 200, body: { message: 'ok' } }, status: 200 } };
+        }
+        if (t.includes('sheet') || t.includes('database') || t.includes('query')) {
+          return { output: { data: [{ id: 1, name: 'Example' }] } };
+        }
+        // If metadata provides hints, try to build something from configs
+        if (metadata && metadata.configs && metadata.configs.length) {
+          // create a small example shape using config keys
+          const obj: any = { output: { data: {} } };
+          metadata.configs.slice(0, 4).forEach((c: any) => {
+            const key = (c.l || '').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase() || 'field';
+            obj.output.data[key] = c.d ?? `example_${key}`;
+          });
+          return obj;
+        }
+
+        return { output: { data: { example: 'value' } } };
+      };
+
+      // prefer fetched sample if available
+      nodeResult = nodeResult ?? buildExampleForType(node.data?.type || node.type);
+      synthesizedExample = true;
+    }
+
+    if (typeof nodeResult !== 'object') {
+      addVariable('output', 'output', 'Main output value', 'output');
+      return vars;
+    }
+
+    const flattened = flattenObjectPaths(nodeResult, '');
+    const seenPaths = new Set<string>();
+
+    flattened.forEach(path => {
+      if (seenPaths.has(path)) return;
+      seenPaths.add(path);
+      const category = path.startsWith('output') ? 'output' : 'data';
+      addVariable(path, path, 'Previous node data path', category);
+    });
+
+    if (nodeType.startsWith('ai-') && typeof nodeResult.output !== 'object') {
+      addVariable('output', 'output', 'AI generated response', 'output');
     }
 
     if (nodeType.includes('search')) {
-      addVariable('output.text', 'output.text', 'Search results as text', 'output');
       addVariable(
         'output.data.resultCount',
         'output.data.resultCount',
@@ -140,7 +241,6 @@ export function useVariablePicker(
       addVariable('output.data.body', 'output.data.body', 'HTTP response body', 'data');
     }
 
-    const nodeResult = executionResults?.[nodeId];
     const outputData = nodeResult?.output ?? nodeResult;
     if (outputData && typeof outputData === 'object') {
       const flattened = flattenObjectPaths(outputData, 'output');

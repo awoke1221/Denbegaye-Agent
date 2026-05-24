@@ -16,6 +16,7 @@ interface VariableInputProps {
   type?: 'text' | 'password' | 'email';
   description?: string;
   className?: string;
+  executionResults?: Record<string, any> | null;
 }
 
 export function VariableInput({
@@ -30,6 +31,7 @@ export function VariableInput({
   type = 'text',
   description,
   className,
+  executionResults,
 }: VariableInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -52,75 +54,119 @@ export function VariableInput({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {label && (
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '8px',
+            gap: '12px',
           }}
         >
           <label
-            style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-secondary)' }}
+            style={{
+              fontSize: '13px',
+              fontWeight: 600,
+              color: 'var(--color-foreground)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
           >
             {label}
-            {required && <span style={{ color: 'var(--color-danger)', marginLeft: '4px' }}>*</span>}
+            {required && (
+              <span style={{ color: '#ef4444', fontSize: '16px', lineHeight: 1 }}>•</span>
+            )}
           </label>
           {type !== 'password' && (
             <VariablePicker
               variables={availableVariables}
               onSelect={handleVariableSelect}
               fieldKey={fieldKey}
+              debugData={executionResults}
             />
           )}
         </div>
       )}
 
-      <input
-        ref={inputRef}
-        type={type}
-        value={value || ''}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        disabled={disabled}
-        className={className}
-        style={{
-          width: '100%',
-          padding: '11px 12px',
-          fontSize: '12px',
-          border: '1px solid var(--color-border-tertiary)',
-          borderRadius: '8px',
-          background: 'var(--color-background-secondary)',
-          color: 'var(--color-text-primary)',
-          outline: 'none',
-        }}
-      />
+      <div style={{ position: 'relative' }}>
+        <input
+          ref={inputRef}
+          type={type}
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={className}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            fontSize: '13px',
+            border: '2px solid var(--color-border)',
+            borderRadius: '12px',
+            background: disabled ? 'var(--color-muted)' : 'var(--color-input)',
+            color: 'var(--color-foreground)',
+            outline: 'none',
+            transition: 'all 0.2s ease',
+            fontWeight: 500,
+          }}
+          onFocus={e => {
+            e.currentTarget.style.borderColor = '#667eea';
+            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+          }}
+          onBlur={e => {
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        />
+      </div>
 
       {description && (
-        <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', margin: 0 }}>
+        <p
+          style={{
+            fontSize: '12px',
+            color: 'var(--color-muted-foreground)',
+            margin: 0,
+            lineHeight: 1.4,
+          }}
+        >
           {description}
         </p>
       )}
 
       {type !== 'password' && value && value.includes('{{') && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
           {Array.from(value.matchAll(/\{\{([^}]+)\}\}/g)).map((match, i) => (
             <span
               key={i}
               style={{
-                fontSize: '10px',
-                background: 'var(--color-background-secondary)',
-                color: 'var(--color-accent-primary)',
-                padding: '3px 8px',
-                borderRadius: '999px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '11px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: '#fff',
+                padding: '6px 12px',
+                borderRadius: '10px',
                 fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                animation: 'slideInUp 0.3s ease',
               }}
             >
-              {'{'}
-              {match[1]}
-              {'}'}
+              <style>{`
+                @keyframes slideInUp {
+                  from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+                }
+              `}</style>
+              {`⚡ {{${match[1]}}}`}
             </span>
           ))}
         </div>

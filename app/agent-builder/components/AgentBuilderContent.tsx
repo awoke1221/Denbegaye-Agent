@@ -2446,6 +2446,7 @@ function AgentBuilderContent() {
               setLog={setLog}
               nodeTypeCategory={nodeTypeCategory}
               isNodeConfigured={isNodeConfigured}
+              executionResults={executionResult}
             />
 
             <AgentBuilderLogPanel

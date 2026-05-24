@@ -16,6 +16,7 @@ interface VariableTextareaProps {
   required?: boolean;
   description?: string;
   className?: string;
+  executionResults?: Record<string, any> | null;
 }
 
 export function VariableTextarea({
@@ -30,6 +31,7 @@ export function VariableTextarea({
   required,
   description,
   className,
+  executionResults,
 }: VariableTextareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -55,30 +57,36 @@ export function VariableTextarea({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {label && (
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '8px',
+            gap: '12px',
           }}
         >
           <label
             style={{
-              fontSize: '12px',
-              fontWeight: 500,
-              color: 'var(--color-text-secondary)',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: 'var(--color-foreground)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
             {label}
-            {required && <span style={{ color: 'var(--color-danger)', marginLeft: '4px' }}>*</span>}
+            {required && (
+              <span style={{ color: '#ef4444', fontSize: '16px', lineHeight: 1 }}>•</span>
+            )}
           </label>
           <VariablePicker
             variables={availableVariables}
             onSelect={handleVariableSelect}
             fieldKey={fieldKey}
+            debugData={executionResults}
           />
         </div>
       )}
@@ -94,17 +102,27 @@ export function VariableTextarea({
           className={className}
           style={{
             width: '100%',
-            minHeight: '120px',
-            padding: '10px',
-            fontSize: '12px',
-            border: '1px solid var(--color-border-tertiary)',
-            borderRadius: '8px',
-            background: 'var(--color-background-secondary)',
-            color: 'var(--color-text-primary)',
+            minHeight: '140px',
+            padding: '12px 16px',
+            fontSize: '13px',
+            border: '2px solid var(--color-border)',
+            borderRadius: '12px',
+            background: disabled ? 'var(--color-muted)' : 'var(--color-input)',
+            color: 'var(--color-foreground)',
             resize: 'vertical',
             outline: 'none',
-            fontFamily: 'var(--font-sans)',
+            fontFamily: 'var(--font-mono)',
             lineHeight: 1.6,
+            transition: 'all 0.2s ease',
+            fontWeight: 500,
+          }}
+          onFocus={e => {
+            e.currentTarget.style.borderColor = '#667eea';
+            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+          }}
+          onBlur={e => {
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.boxShadow = 'none';
           }}
         />
       </div>
@@ -112,9 +130,10 @@ export function VariableTextarea({
       {description && (
         <p
           style={{
-            fontSize: '11px',
-            color: 'var(--color-text-tertiary)',
+            fontSize: '12px',
+            color: 'var(--color-muted-foreground)',
             margin: 0,
+            lineHeight: 1.4,
           }}
         >
           {description}
@@ -126,28 +145,56 @@ export function VariableTextarea({
           style={{
             display: 'flex',
             flexWrap: 'wrap',
-            gap: '6px',
-            marginTop: '4px',
+            gap: '8px',
+            marginTop: '8px',
+            padding: '12px',
+            background:
+              'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)',
+            borderRadius: '12px',
+            border: '1px solid rgba(102, 126, 234, 0.1)',
           }}
         >
+          <div
+            style={{
+              width: '100%',
+              fontSize: '11px',
+              fontWeight: 600,
+              color: '#667eea',
+              marginBottom: '4px',
+            }}
+          >
+            ⚡ Inserted Variables:
+          </div>
           {Array.from(value.matchAll(/\{\{([^}]+)\}\}/g)).map((match, i) => (
             <span
               key={i}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '4px',
-                fontSize: '10px',
-                background: 'var(--color-background-secondary)',
-                color: 'var(--color-accent-primary)',
-                padding: '3px 8px',
-                borderRadius: '999px',
+                gap: '6px',
+                fontSize: '11px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: '#fff',
+                padding: '6px 12px',
+                borderRadius: '10px',
                 fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                animation: 'slideInUp 0.3s ease',
               }}
             >
-              {'{'}
-              {match[1]}
-              {'}'}
+              <style>{`
+                @keyframes slideInUp {
+                  from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+                }
+              `}</style>
+              {`{{${match[1]}}}`}
             </span>
           ))}
         </div>
