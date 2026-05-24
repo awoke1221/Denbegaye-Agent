@@ -1,0 +1,45 @@
+type User @table {
+  email: String!
+  hashedPassword: String!
+  createdAt: Timestamp!
+  displayName: String
+  photoUrl: String
+}
+
+type SocialAccount @table {
+  user: User!
+  platform: String!
+  accountId: String!
+  accessToken: String!
+  createdAt: Timestamp!
+  refreshToken: String
+  accountUsername: String
+}
+
+type Post @table {
+  user: User!
+  content: String!
+  scheduledAt: Timestamp!
+  createdAt: Timestamp!
+  status: String!
+  mediaUrl: String
+  publishedAt: Timestamp
+}
+
+type Project @table {
+  user: User!
+  name: String!
+  createdAt: Timestamp!
+  description: String
+}
+
+type ProjectSocialAccount @table(key: ["project", "socialAccount"]) {
+  project: Project!
+  socialAccount: SocialAccount!
+  assignedAt: Timestamp!
+}
+
+type PostSocialAccount @table(key: ["post", "socialAccount"]) {
+  post: Post!
+  socialAccount: SocialAccount!
+}

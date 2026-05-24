@@ -1,0 +1,28 @@
+# Normalize line endings for text files and avoid CRLF/LF issues.
+* text=auto
+
+# Explicit text files
+*.md text
+*.json text
+*.js text
+*.jsx text
+*.ts text
+*.tsx text
+*.css text
+*.scss text
+*.html text
+*.yml text
+*.yaml text
+*.txt text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.eot binary
+*.otf binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
