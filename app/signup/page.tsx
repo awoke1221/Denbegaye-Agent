@@ -150,7 +150,7 @@ export default function SignupPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="px-8 py-8 sm:px-10 sm:py-10">
-              <div className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <Button
                   style={{
                     background: '#ffffff',
@@ -263,7 +263,7 @@ export default function SignupPage() {
                     Sign in
                   </Link>
                 </p>
-              </div>
+              </form>
             </CardContent>
           </Card>
         </div>
