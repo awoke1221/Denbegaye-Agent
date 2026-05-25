@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable Turbopack and use Webpack (more stable)
+  // Experimental features
   experimental: {
-    webpackBuildWorker: false,
-    turbopack: false,
     optimizeCss: true,
     scrollRestoration: true,
   },
@@ -71,13 +69,6 @@ const nextConfig = {
       return config;
     },
   }),
-
-  // Experimental features (Turbopack disabled for stability)
-  experimental: {
-    webpackBuildWorker: false,
-    optimizeCss: true,
-    scrollRestoration: true,
-  },
 
   // Compression
   compress: true,
