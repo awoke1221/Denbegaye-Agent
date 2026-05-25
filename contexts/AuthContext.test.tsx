@@ -43,7 +43,6 @@ describe('AuthContext', () => {
     expect(result.current).toHaveProperty('signUp');
     expect(result.current).toHaveProperty('signOut');
     expect(result.current).toHaveProperty('signInWithGoogle');
-    expect(result.current).toHaveProperty('signInWithGithub');
   });
 
   it('initializes with loading state', () => {

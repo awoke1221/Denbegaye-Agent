@@ -21,7 +21,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<SupabaseUser | null>;
   signUp: (email: string, password: string) => Promise<SupabaseUser | null>;
   signInWithGoogle: () => Promise<string | SupabaseUser | null>;
-  signInWithGithub: () => Promise<string | SupabaseUser | null>;
   signInWithGoogleForService: (
     service: string,
     nodeId?: string
@@ -38,7 +37,6 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async (_email: string, _password: string) => null,
   signUp: async (_email: string, _password: string) => null,
   signInWithGoogle: async () => null,
-  signInWithGithub: async () => null,
   signInWithGoogleForService: async (_service: string) => null,
   signOut: async () => {},
 });
@@ -170,9 +168,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (error) {
       console.error('Sign up error:', error);
+      const message = (error.message || '').toLowerCase();
+
       if (error.status === 400) {
-        throw new Error('Invalid email or password format.');
+        if (message.includes('invalid email') || message.includes('invalid email address')) {
+          throw new Error('Please enter a valid email address like name@example.com.');
+        }
+
+        if (
+          message.includes('already registered') ||
+          message.includes('already exists') ||
+          message.includes('duplicate') ||
+          message.includes('user already exists')
+        ) {
+          throw new Error(
+            'An account with this email already exists. Please sign in or use a different email.'
+          );
+        }
+
+        throw new Error(
+          'Your email or password format is not valid. Please check the requirements.'
+        );
       }
+
       throw new Error(error.message || 'Failed to create account.');
     }
 
@@ -204,27 +222,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (error) {
       throw new Error(error.message || 'Failed to sign in with Google.');
-    }
-
-    if (data?.url) {
-      window.location.href = data.url;
-      return null;
-    }
-
-    return null;
-  };
-
-  const signInWithGithub = async (): Promise<string | SupabaseUser | null> => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo:
-          typeof window !== 'undefined' ? `${window.location.origin}/verify-email` : undefined,
-      },
-    });
-
-    if (error) {
-      throw new Error(error.message || 'Failed to sign in with GitHub.');
     }
 
     if (data?.url) {
@@ -343,7 +340,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signUp,
     signInWithGoogle,
-    signInWithGithub,
     signInWithGoogleForService,
     signOut,
   };
