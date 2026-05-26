@@ -7,6 +7,25 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 let supabase: SupabaseClient;
 let supabaseAdmin: SupabaseClient | null = null;
 
+const createMissingEnvClient = (): SupabaseClient => {
+  console.warn(
+    'Supabase env vars missing: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Supabase client will be stubbed until runtime environment variables are configured.'
+  );
+
+  return new Proxy(
+    {},
+    {
+      get: () => {
+        return () => {
+          throw new Error(
+            'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment to use Supabase features.'
+          );
+        };
+      },
+    }
+  ) as SupabaseClient;
+};
+
 if (process.env.NODE_ENV === 'test') {
   const stub: any = {
     auth: {
@@ -23,28 +42,27 @@ if (process.env.NODE_ENV === 'test') {
   supabaseAdmin = null;
 } else {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error(
-      'Missing Supabase environment variables. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local or your runtime environment.'
-    );
+    supabase = createMissingEnvClient();
+    supabaseAdmin = null;
+  } else {
+    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      },
+    });
+
+    supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
+      ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        })
+      : null;
   }
-
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    },
-  });
-
-  supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      })
-    : null;
 }
 
 export { supabase, supabaseAdmin };
