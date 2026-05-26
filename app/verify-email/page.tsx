@@ -17,30 +17,66 @@ export default function VerifyEmailPage() {
   const { toast } = useToast();
 
   const loadUser = async () => {
-    const { data, error } = await supabase.auth.getUser();
+    try {
+      // Try to parse session from URL (OAuth redirect). This helps when
+      // Supabase places the session in the URL fragment after OAuth.
+      if (typeof window !== 'undefined' && (supabase.auth as any)?.getSessionFromUrl) {
+        try {
+          const sessionResult = await (supabase.auth as any).getSessionFromUrl();
+          if (sessionResult?.data?.session) {
+            // session should now be stored by supabase client
+            setUser(sessionResult.data.session.user);
+            setIsLoading(false);
+            // If email already verified, redirect home
+            if (sessionResult.data.session.user.email_confirmed_at) {
+              toast({
+                title: 'Email verified',
+                description: 'Welcome back! Redirecting to home...',
+              });
+              router.push('/');
+              return;
+            }
+            return;
+          }
+        } catch (err) {
+          // ignore and continue to getUser fallback
+          console.warn('getSessionFromUrl failed:', err);
+        }
+      }
 
-    if (error || !data.user) {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error || !data.user) {
+        toast({
+          title: 'Not signed in',
+          description: 'Please login or sign up first.',
+          variant: 'destructive',
+        });
+        router.push('/login');
+        return;
+      }
+
+      setUser(data.user);
+
+      if (data.user.email_confirmed_at) {
+        toast({
+          title: 'Email verified',
+          description: 'Welcome back! Redirecting to home...',
+        });
+        router.push('/');
+        return;
+      }
+
+      setIsLoading(false);
+    } catch (err) {
+      console.error('loadUser error:', err);
       toast({
         title: 'Not signed in',
         description: 'Please login or sign up first.',
         variant: 'destructive',
       });
       router.push('/login');
-      return;
     }
-
-    setUser(data.user);
-
-    if (data.user.email_confirmed_at) {
-      toast({
-        title: 'Email verified',
-        description: 'Welcome back! Redirecting to home...',
-      });
-      router.push('/');
-      return;
-    }
-
-    setIsLoading(false);
   };
 
   useEffect(() => {
