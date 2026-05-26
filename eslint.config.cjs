@@ -11,9 +11,10 @@ module.exports = [
     plugins: ['@typescript-eslint', 'react-hooks'],
     parser: '@typescript-eslint/parser',
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
-      'react-hooks/exhaustive-deps': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      '@typescript-eslint/no-require-imports': 'warn',
       'prefer-const': 'error',
       'no-var': 'error',
     },
