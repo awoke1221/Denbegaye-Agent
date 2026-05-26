@@ -8,7 +8,7 @@ The node configuration interface has been transformed from a functional but basi
 
 ## 📋 What Was Enhanced
 
-### 1. **VariablePicker Modal Component** ⭐⭐⭐
+### 1. **VariablePickers Modal Component** ⭐⭐⭐
 
 **Before:**
 
