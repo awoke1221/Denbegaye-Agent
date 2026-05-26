@@ -37,7 +37,7 @@ The Admin Dashboard for Denbegnaye provides comprehensive management capabilitie
 - **Maintenance Operations**: Database backup/restore, optimization
 - **Security Controls**: Access permissions and audit logs
 
-## Access Control
+## Access Controls
 
 The admin dashboard is accessible via `/admin` route and requires authentication. Currently configured to allow access for users with admin email (`admin@denbegnaye.com`). In production, implement proper role-based access control.
 
