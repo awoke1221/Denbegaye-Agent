@@ -3,14 +3,15 @@ import Redis from 'ioredis';
 const redisUrl =
   process.env.REDIS_URL || process.env.NEXT_PUBLIC_REDIS_URL || 'redis://127.0.0.1:6379';
 
-declare global {
-  let __redisClient: Redis | undefined;
-}
+type GlobalWithRedis = typeof globalThis & {
+  __redisClient?: Redis;
+};
 
-const redisClient = globalThis.__redisClient || new Redis(redisUrl);
+const globalWithRedis = globalThis as GlobalWithRedis;
+const redisClient = globalWithRedis.__redisClient || new Redis(redisUrl);
 
 if (process.env.NODE_ENV !== 'production') {
-  globalThis.__redisClient = redisClient;
+  globalWithRedis.__redisClient = redisClient;
 }
 
 export const AGENT_RUN_QUEUE = 'agent_execution_queue';

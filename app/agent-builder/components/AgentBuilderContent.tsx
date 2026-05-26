@@ -613,7 +613,7 @@ function AgentBuilderContent() {
   const { user: currentUser } = useAuth();
 
   useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
+    const handleMouseMove = (event: globalThis.MouseEvent) => {
       if (!draggingPane) return;
 
       const nextX = event.clientX - dragOffset.x;
@@ -1228,11 +1228,12 @@ function AgentBuilderContent() {
 
       const newConfig = { ...n.data.config, ...configUpdates };
       let updatedLabel = n.data.label;
+      const action = typeof configUpdates.action === 'string' ? configUpdates.action : undefined;
 
-      if (n.type === 'data-google-sheets' && configUpdates.action) {
-        updatedLabel = `Google Sheets — ${formatGoogleSheetsActionLabel(configUpdates.action)}`;
-      } else if (n.type === 'ai-gemini' && configUpdates.action) {
-        updatedLabel = `Gemini — ${formatGeminiActionLabel(configUpdates.action)}`;
+      if (n.type === 'data-google-sheets' && action) {
+        updatedLabel = `Google Sheets — ${formatGoogleSheetsActionLabel(action)}`;
+      } else if (n.type === 'ai-gemini' && action) {
+        updatedLabel = `Gemini — ${formatGeminiActionLabel(action)}`;
       }
 
       const updatedData: AgentNodeData = {
@@ -1247,8 +1248,8 @@ function AgentBuilderContent() {
         },
       };
 
-      if (n.type === 'ai-gemini' && configUpdates.action) {
-        updatedData.level = getGeminiActionLevel(configUpdates.action);
+      if (n.type === 'ai-gemini' && action) {
+        updatedData.level = getGeminiActionLevel(action);
       }
 
       return {
@@ -1745,7 +1746,8 @@ function AgentBuilderContent() {
 
   const onConnect: OnConnect = (connection: Connection) => {
     const connectionType = getEdgeDataType(connection);
-    const connectionData = (connection.data ?? {}) as Record<string, unknown>;
+    const connectionData =
+      'data' in connection ? ((connection.data ?? {}) as Record<string, unknown>) : {};
     setEdges(
       addEdge(
         {
