@@ -12,6 +12,8 @@ import { AgentBuilderTemplates } from '@/lib/agentBuilderTemplates';
 import { BrandGlowEdge } from './BrandGlowEdge';
 import { nodeTypes } from '../constants/nodeTypes';
 
+const edgeTypes = { 'brand-glow': BrandGlowEdge };
+
 export type AgentBuilderCanvasProps = {
   activeSection: string;
   nodes: Node[];
@@ -151,7 +153,7 @@ export function AgentBuilderCanvas({
           onPaneClick={onPaneClick}
           fitView
           nodeTypes={nodeTypes}
-          edgeTypes={{ 'brand-glow': BrandGlowEdge }}
+          edgeTypes={edgeTypes}
           className="reactflow-builder-canvas bg-gradient-to-br from-cyan-50 via-slate-100 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950"
           panOnDrag
           zoomOnScroll

@@ -1,29 +1,23 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentType, type MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import ReactFlow, {
+import {
   addEdge,
-  Background,
-  Controls,
   Edge,
+  EdgeChange,
   Node,
   NodeChange,
+  OnConnect,
+  OnConnectStartParams,
+  Connection,
   applyNodeChanges,
   applyEdgeChanges,
-  OnConnect,
-  Connection,
-  useReactFlow,
-  ReactFlowProvider,
-  getBezierPath,
-  EdgeProps,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import type { Socket } from 'socket.io-client';
 import { getSharedSocket } from '@/lib/socket-client';
-import { extractAvatarInitials } from '@/lib/avatar-utils';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getNodeIcon, getNodeTheme } from '@/components/agent-nodes/NodeRegistry';
+import { getNodeIcon } from '@/components/agent-nodes/NodeRegistry';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgentBuilderStore, AgentNodeData } from '@/stores/agentBuilderStore';
 import { AgentBuilderTemplates as agentBuilderTemplates } from '@/lib/agentBuilderTemplates';
@@ -49,47 +43,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch';
-import {
-  LayoutDashboard,
-  FileText,
-  Settings,
-  ShoppingBag,
-  Clock,
-  Play,
-  Save,
-  RotateCcw,
-  Plus,
-  Trash2,
-  Eye,
-  EyeOff,
-  Zap,
-  Cpu,
-  MessageSquare,
-  Mail,
-  Send,
-  Database,
-  Webhook,
-  Smartphone,
-  Globe,
-  Youtube,
-  Facebook,
-  Twitter,
-  Linkedin,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  ChevronDown,
-  Download,
-} from 'lucide-react';
 
-import { availableNodeTypes, sidebarItems, nodeTypes } from '../constants/nodeTypes';
-import { BrandGlowEdge } from './BrandGlowEdge';
+import { availableNodeTypes, nodeTypes } from '../constants/nodeTypes';
 import { AgentBuilderSidebar } from './AgentBuilderSidebar';
 import { ExecutionControls } from './ExecutionControls';
 import { AgentBuilderCanvas } from './AgentBuilderCanvas';
@@ -108,7 +63,7 @@ function AgentBuilderContent() {
     id?: string;
     x: number;
     y: number;
-    data?: any;
+    data?: Record<string, unknown>;
   }>({ type: null, x: 0, y: 0 });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -160,18 +115,6 @@ function AgentBuilderContent() {
   // Search/filter state (must be after nodes/edges)
   const [searchQuery, setSearchQuery] = useState('');
   // Compute filtered/highlighted nodes/edges
-  const filteredNodeIds = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase();
-    return nodes
-      .filter(
-        (n: Node) =>
-          (n.data?.label?.toLowerCase?.() || '').includes(q) ||
-          n.id.toLowerCase().includes(q) ||
-          (n.type?.toLowerCase?.() || '').includes(q)
-      )
-      .map(n => n.id);
-  }, [searchQuery, nodes]);
   const filteredEdgeIds = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
@@ -201,9 +144,9 @@ function AgentBuilderContent() {
   }, [templateSearchQuery, selectedCategory]);
 
   // Helper function to render icons consistently
-  const renderIcon = (icon: any, className: string = '') => {
+  const renderIcon = (icon: unknown, className = '') => {
     if (typeof icon === 'function') {
-      const IconComponent = icon;
+      const IconComponent = icon as ComponentType<{ className?: string }>;
       return <IconComponent className={className} />;
     } else if (typeof icon === 'string' && icon.startsWith('<svg')) {
       return <div className={className} dangerouslySetInnerHTML={{ __html: icon }} />;
@@ -241,7 +184,7 @@ function AgentBuilderContent() {
     setEdges([...edges, newEdge]);
   };
   // Utility: copy config
-  const copyConfig = (config: any) => {
+  const copyConfig = (config: unknown) => {
     navigator.clipboard.writeText(JSON.stringify(config, null, 2));
     setLog(prev => [...prev, 'Config copied to clipboard']);
   };
@@ -495,21 +438,9 @@ function AgentBuilderContent() {
   const [editingNodeLabel, setEditingNodeLabel] = useState<string>('');
 
   // Start editing on double click
-  const onNodeDoubleClick = (_event: any, node: Node) => {
+  const onNodeDoubleClick = (_event: MouseEvent, node: Node) => {
     setEditingNodeId(node.id);
     setEditingNodeLabel(node.data.label || '');
-  };
-
-  // Save label on blur or Enter
-  const saveInlineEdit = () => {
-    if (editingNodeId) {
-      const updatedNodes = nodes.map(n =>
-        n.id === editingNodeId ? { ...n, data: { ...n.data, label: editingNodeLabel } } : n
-      );
-      setNodes(updatedNodes);
-    }
-    setEditingNodeId(null);
-    setEditingNodeLabel('');
   };
 
   // Undo/Redo state (must be after nodes/edges/setNodes/setEdges)
@@ -571,15 +502,15 @@ function AgentBuilderContent() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionId, setExecutionId] = useState<string | null>(null);
   const [executionStatus, setExecutionStatus] = useState<string | null>(null);
-  const [executionResult, setExecutionResult] = useState<Record<string, any> | null>(null);
+  const [executionResult, setExecutionResult] = useState<Record<string, unknown> | null>(null);
   const [executionError, setExecutionError] = useState<string | null>(null);
   const [pollingExecution, setPollingExecution] = useState(false);
-  const [currentExecutingNodeId, setCurrentExecutingNodeId] = useState<string | null>(null);
+  const [, setCurrentExecutingNodeId] = useState<string | null>(null);
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
-  const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
+  const [, setIsLoadingTemplate] = useState(false);
 
   // Use the extracted effects hook
-  const { undo, redo, approvalRequest, submitApproval } = useAgentBuilderEffects({
+  const { approvalRequest, submitApproval } = useAgentBuilderEffects({
     nodes,
     edges,
     workflowName,
@@ -1069,18 +1000,6 @@ function AgentBuilderContent() {
     setLog(prev => [...prev, 'Agent deleted successfully']);
   };
 
-  const setAgentStatus = async (agentId: string, status: string) => {
-    const { error } = await supabase.from('user_agents').update({ status }).eq('id', agentId);
-    if (error) {
-      setLog(prev => [...prev, `Failed to set status: ${error.message}`]);
-      return;
-    }
-    await loadUserAgents();
-    if (selectedAgentId === agentId) {
-      setCurrentAgentStatus(status);
-    }
-  };
-
   // Load saved workflows for Scheduler/Webhooks and user agents for dashboard
   useEffect(() => {
     const loadWorkflows = async () => {
@@ -1114,7 +1033,7 @@ function AgentBuilderContent() {
       )
       .join('');
 
-  const isConfiguredValue = (value: any) => {
+  const isConfiguredValue = (value: unknown) => {
     if (value === undefined || value === null) return false;
     if (typeof value === 'string') return value.trim() !== '';
     if (Array.isArray(value)) return value.length > 0;
@@ -1125,7 +1044,7 @@ function AgentBuilderContent() {
   const getNodeTypeMetadata = (type?: string) =>
     type ? availableNodeTypes.find(item => item.id === type) : undefined;
 
-  const isNodeConfigured = (node: Node<any>) => {
+  const isNodeConfigured = (node: Node<AgentNodeData>) => {
     const config = node.data?.config || {};
     const metadata = getNodeTypeMetadata(node.type);
     if (metadata?.configs?.length) {
@@ -1303,7 +1222,7 @@ function AgentBuilderContent() {
     return 'Beginner';
   };
 
-  const updateNodeConfig = (nodeId: string, configUpdates: Record<string, any>) => {
+  const updateNodeConfig = (nodeId: string, configUpdates: Record<string, unknown>) => {
     const updatedNodes = nodes.map(n => {
       if (n.id !== nodeId) return n;
 
@@ -1353,7 +1272,7 @@ function AgentBuilderContent() {
     const restoreServiceToken = async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        const session = data?.session as any;
+        const session = data?.session as { provider_token?: string } | null | undefined;
         const token = session?.provider_token;
 
         if (token) {
@@ -1389,61 +1308,6 @@ function AgentBuilderContent() {
 
     restoreServiceToken();
   }, [nodes, setLog, updateNodeConfig]);
-
-  const startVisualExecutionStepper = (execOrder: string[], executionId: string) => {
-    let currentIndex = 0;
-
-    const stepThroughExecution = () => {
-      if (currentIndex >= execOrder.length) {
-        // All nodes have been visually stepped through
-        setCurrentExecutingNodeId(null);
-        return;
-      }
-
-      const nodeId = execOrder[currentIndex];
-      const node = nodes.find(n => n.id === nodeId);
-
-      if (node) {
-        // Set current node as executing
-        setCurrentExecutingNodeId(nodeId);
-
-        // Update node state to executing
-        setNodes(
-          nodes.map(n =>
-            n.id === nodeId
-              ? { ...n, data: { ...n.data, executionState: 'executing' as const } }
-              : n
-          )
-        );
-
-        setLog(prev => [...prev, `Executing node: ${node.data?.label || nodeId}`]);
-
-        // Simulate execution time (adjust based on node type)
-        const executionTime = getNodeExecutionTime(node.type || '');
-
-        setTimeout(() => {
-          // Mark node as completed
-          setNodes(
-            nodes.map(n =>
-              n.id === nodeId
-                ? { ...n, data: { ...n.data, executionState: 'completed' as const } }
-                : n
-            )
-          );
-
-          setLog(prev => [...prev, `Node completed: ${node.data?.label || nodeId}`]);
-          currentIndex++;
-          stepThroughExecution(); // Continue to next node
-        }, executionTime);
-      } else {
-        currentIndex++;
-        stepThroughExecution();
-      }
-    };
-
-    // Start the visual stepping
-    stepThroughExecution();
-  };
 
   const getNodeExecutionTime = (nodeType: string): number => {
     // Simulate different execution times based on node type
@@ -1659,31 +1523,30 @@ function AgentBuilderContent() {
         body: JSON.stringify(payload),
       });
 
-      const responseBody = await parseResponseBody(response);
+      const responseBody = (await parseResponseBody(response)) as unknown;
       if (!response.ok) {
         socket.emit('unsubscribe:execution', proposedExecutionId);
 
-        if (
-          responseBody &&
-          typeof responseBody === 'object' &&
-          Array.isArray((responseBody as any).details?.errors)
-        ) {
-          const validationErrors = (responseBody as any).details.errors.filter(
-            (item: unknown) => typeof item === 'string'
-          ) as string[];
-          if (validationErrors.length > 0) {
-            const message = `Workflow validation failed: ${validationErrors.join('; ')}`;
-            setExecutionError(message);
-            setLog(prev => [...prev, message]);
-            applyValidationErrorsToNodes(validationErrors);
-            return;
+        if (responseBody && typeof responseBody === 'object') {
+          const details = (responseBody as { details?: { errors?: unknown } }).details;
+          if (Array.isArray(details?.errors)) {
+            const validationErrors = details.errors.filter(
+              (item: unknown) => typeof item === 'string'
+            ) as string[];
+            if (validationErrors.length > 0) {
+              const message = `Workflow validation failed: ${validationErrors.join('; ')}`;
+              setExecutionError(message);
+              setLog(prev => [...prev, message]);
+              applyValidationErrorsToNodes(validationErrors);
+              return;
+            }
           }
         }
 
         const serverError =
           responseBody && typeof responseBody === 'object'
-            ? (responseBody.error as string) ||
-              (responseBody.message as string) ||
+            ? (responseBody as { error?: string; message?: string }).error ||
+              (responseBody as { error?: string; message?: string }).message ||
               JSON.stringify(responseBody)
             : String(responseBody || `${response.statusText}`);
         const message = `Agent execution request failed (${response.status} ${response.statusText}) - ${serverError}`;
@@ -1855,7 +1718,7 @@ function AgentBuilderContent() {
   };
 
   // Advanced: support edge removal via right-click
-  const onEdgesChange = (changes: any[]) => {
+  const onEdgesChange = (changes: EdgeChange[]) => {
     setEdges(applyEdgeChanges(changes, edges));
   };
 
@@ -1868,13 +1731,11 @@ function AgentBuilderContent() {
   };
 
   // Advanced: highlight compatible ports on connect
-  const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
-  // React Flow's OnConnectStartParams: { nodeId: string | null; handleId: string | null; handleType: 'source' | 'target' | null }
-  const onConnectStart = (_event: any, params: { nodeId: string | null }) => {
-    setConnectingNodeId(params.nodeId ?? null);
+  const onConnectStart = (_event: React.MouseEvent, _params: OnConnectStartParams) => {
+    // Placeholder for future edge highlight behavior.
   };
   const onConnectEnd = () => {
-    setConnectingNodeId(null);
+    // No-op cleanup for future edge drag interactions.
   };
 
   const getEdgeDataType = (connection: Connection) => {
@@ -1884,12 +1745,13 @@ function AgentBuilderContent() {
 
   const onConnect: OnConnect = (connection: Connection) => {
     const connectionType = getEdgeDataType(connection);
+    const connectionData = (connection.data ?? {}) as Record<string, unknown>;
     setEdges(
       addEdge(
         {
-          ...(connection as any),
+          ...connection,
           data: {
-            ...((connection as any).data ?? {}),
+            ...connectionData,
             type: connectionType,
           },
           style:
@@ -1899,13 +1761,13 @@ function AgentBuilderContent() {
                   strokeDasharray: '6 6',
                 }
               : undefined,
-        } as any,
+        },
         edges
       )
     );
   };
 
-  const onNodeClick = (_event: any, node: Node) => {
+  const onNodeClick = (_event: MouseEvent, node: Node) => {
     selectNode(node.id);
   };
 
@@ -1936,50 +1798,6 @@ function AgentBuilderContent() {
   // Group collapse/expand state
   const [collapsedGroups, setCollapsedGroups] = useState<{ [id: string]: boolean }>({});
 
-  const addNode = (type: string) => {
-    const nodeType = availableNodeTypes.find(t => t.id === type);
-    if (!nodeType) return;
-
-    // If adding a group node, set as extent: 'parent'
-    if (type === 'group') {
-      const groupId = `group-${Date.now()}`;
-      const newGroup: Node = {
-        id: groupId,
-        type: 'group',
-        position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-        data: {
-          label: 'Group',
-          description: 'Drag nodes here to group',
-          collapsed: false,
-          onToggleCollapse: (id: string) => {
-            setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
-            const updatedNodes = nodes.map((n: Node<AgentNodeData>) =>
-              n.id === id ? { ...n, data: { ...n.data, collapsed: !collapsedGroups[id] } } : n
-            );
-            setNodes(updatedNodes);
-          },
-        },
-        style: { zIndex: 1 },
-        draggable: true,
-        selectable: true,
-        extent: 'parent',
-      };
-      setNodes([...nodes, newGroup]);
-      return;
-    }
-    const newNode: Node<AgentNodeData> = {
-      id: `${nodes.length + 1}`,
-      type: nodeType.id,
-      position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-      data: {
-        label: nodeType.label,
-        config: {},
-        icon: nodeType.icon,
-      },
-    };
-    setNodes([...nodes, newNode]);
-  };
-
   const loadTemplate = (templateId: string) => {
     const template = agentBuilderTemplates.find(t => t.id === templateId);
     if (template) {
@@ -1993,36 +1811,6 @@ function AgentBuilderContent() {
     } else {
       setLog(prev => [...prev, `Template "${templateId}" not found`]);
     }
-  };
-
-  const renderCredentialSelect = (node: Node<any>, title: string) => {
-    const nodeType = node.type || '';
-    const saved = credentials.filter(
-      cred =>
-        cred.provider === nodeType.replace('ai-', '') ||
-        cred.provider === nodeType.replace('comm-', '').replace('-oauth2', '').replace('-bot', '')
-    );
-    return (
-      <div>
-        <Label className="text-xs font-medium text-slate-600 dark:text-slate-300">{title}</Label>
-        <Select
-          value={node.data.config?.credentialProvider || ''}
-          onValueChange={value => updateNodeConfig(node.id, { credentialProvider: value })}
-        >
-          <SelectTrigger className="mt-1 w-full">
-            <SelectValue placeholder="Choose saved credential" />
-          </SelectTrigger>
-          <SelectContent>
-            {saved.map(cred => (
-              <SelectItem key={cred.id} value={cred.provider}>
-                {cred.label || cred.provider}
-              </SelectItem>
-            ))}
-            <SelectItem value="">Manual / None</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    );
   };
 
   const saveAgentAsDraft = async () => {
@@ -2223,28 +2011,6 @@ function AgentBuilderContent() {
     } finally {
       setSavingTemplate(false);
     }
-  };
-
-  const executeWorkflowHandler = async () => {
-    // TODO: implement workflow execution
-    setLog(prev => [...prev, 'Workflow execution started']);
-  };
-
-  const createNewAgentWorkflowHandler = () => {
-    // TODO: implement creating new workflow
-    reset();
-    setWorkflowName('Untitled Agent Workflow');
-    setLog(prev => [...prev, 'New workflow created']);
-  };
-  const publishAgentHandler = async () => {
-    // TODO: implement publishing agent
-    setLog(prev => [...prev, 'Agent published']);
-  };
-  const resetHandler = () => {
-    // TODO: implement reset
-    setNodes([]);
-    setEdges([]);
-    setLog(prev => [...prev, 'Workflow reset']);
   };
 
   return (

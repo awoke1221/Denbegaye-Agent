@@ -4,8 +4,7 @@ const redisUrl =
   process.env.REDIS_URL || process.env.NEXT_PUBLIC_REDIS_URL || 'redis://127.0.0.1:6379';
 
 declare global {
-  // eslint-disable-next-line vars-on-top, no-var
-  var __redisClient: Redis | undefined;
+  let __redisClient: Redis | undefined;
 }
 
 const redisClient = globalThis.__redisClient || new Redis(redisUrl);

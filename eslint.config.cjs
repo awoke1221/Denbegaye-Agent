@@ -19,6 +19,16 @@ module.exports = [
     },
   }),
   {
-    ignores: ['node_modules/**', '.next/**', 'out/**', 'dist/**'],
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'dist/**',
+      'eslint.config.cjs',
+      'jest.config.js',
+      'next.config.mjs',
+      'scripts/**',
+      'app/agent-builder/**/*.js',
+    ],
   },
 ];
