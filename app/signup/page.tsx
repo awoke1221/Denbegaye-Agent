@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sparkles, CheckCircle2, XCircle } from 'lucide-react';
+import { Sparkles, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { z } from 'zod';
+import { PasswordField } from '@/app/signup/components/PasswordField';
+import { SignupProtectionPanel } from '@/app/signup/components/SignupProtectionPanel';
+import { useSignupProtection } from '@/app/signup/hooks/useSignupProtection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,19 +17,46 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { validatePassword } from '@/lib/password-validation';
 
+const SIGNUP_COOLDOWN_SECONDS = 60;
+
+const emailSchema = z.string().trim().email({
+  message: 'Please enter a valid email address, for example name@example.com.',
+});
+
+type EmailValidationResult = { success: true } | { success: false; message: string };
+
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const {
+    failedAttempts,
+    isCoolingDown,
+    cooldownSeconds,
+    cooldownMessage,
+    recordFailedAttempt,
+    clearProtection,
+  } = useSignupProtection();
+  const [isMounted, setIsMounted] = useState(false);
   const { user, loading: authLoading, signUp, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && user) {
-      if (user.email_confirmed_at || ['google', 'github'].includes(user.app_metadata?.provider)) {
+      const provider = user.app_metadata?.provider;
+
+      if (
+        user.email_confirmed_at ||
+        (typeof provider === 'string' && ['google', 'github'].includes(provider))
+      ) {
         router.replace('/agent-builder');
       } else {
         router.replace('/verify-email');
@@ -32,29 +64,74 @@ export default function SignupPage() {
     }
   }, [authLoading, user, router]);
 
-  const passwordValidation = validatePassword(password);
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const isEmailValid = email.length === 0 || emailRegex.test(email);
+  const passwordValidation = useMemo(() => validatePassword(password), [password]);
+  const normalizeEmail = (value: string) => value.trim().toLowerCase();
+  const emailValidation = useMemo<EmailValidationResult>(() => {
+    if (email.length === 0) {
+      return { success: true };
+    }
 
-  if (authLoading) {
+    const validation = emailSchema.safeParse(email);
+    return validation.success
+      ? { success: true }
+      : {
+          success: false,
+          message: validation.error.errors[0]?.message ?? 'Please enter a valid email address.',
+        };
+  }, [email]);
+  const isEmailValid = emailValidation.success;
+  const emailValidationMessage = useMemo(() => {
+    if (emailValidation.success) {
+      return undefined;
+    }
+
+    return emailValidation.message;
+  }, [emailValidation]);
+  const isAuthInitializing = !isMounted || authLoading;
+
+  // Protection state is managed by `useSignupProtection` hook
+
+  if (isAuthInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#02040f] text-white">
         <div className="rounded-3xl border border-white/10 bg-slate-950/90 px-8 py-10 text-center shadow-2xl shadow-cyan-950/20">
-          <p className="text-lg font-semibold mb-2">Checking your account status…</p>
+          <p className="text-lg font-semibold mb-2">Checking your authentication state…</p>
           <p className="text-sm text-slate-400">
-            Please wait while we redirect you to your workspace.
+            Please wait while we prepare your signup experience.
           </p>
         </div>
       </div>
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (loading) {
+      return;
+    }
+
+    if (isCoolingDown) {
+      const message = `Too many signup attempts. Please wait ${cooldownSeconds} second${
+        cooldownSeconds === 1 ? '' : 's'
+      } before retrying.`;
+      setSubmissionErrors([message]);
+      toast({
+        title: 'Signup paused',
+        description: message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSubmissionErrors([]);
 
-    if (!emailRegex.test(email.trim())) {
-      const message = 'Please enter a valid email address, for example name@example.com.';
+    const normalizedEmail = normalizeEmail(email);
+    const parsedEmail = emailSchema.safeParse(normalizedEmail);
+
+    if (!parsedEmail.success) {
+      const message =
+        parsedEmail.error.errors[0]?.message ??
+        'Please enter a valid email address, for example name@example.com.';
       setSubmissionErrors([message]);
       toast({
         title: 'Invalid email address',
@@ -90,7 +167,8 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const newUser = await signUp(email, password);
+      const newUser = await signUp(normalizedEmail, password);
+      clearProtection();
       toast({
         title: 'Success',
         description: 'Account created successfully, check your email for verification',
@@ -101,10 +179,23 @@ export default function SignupPage() {
       } else {
         router.replace('/agent-builder');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const defaultMessage = 'Failed to create account. Please try again.';
+      let message = defaultMessage;
+
+      if (error instanceof Error) {
+        message = error.message || defaultMessage;
+
+        if (/too many requests|rate limit|429/i.test(error.message)) {
+          message = `We’re pausing signup temporarily to protect against abuse. Please try again in ${SIGNUP_COOLDOWN_SECONDS} seconds.`;
+        }
+      }
+
+      recordFailedAttempt();
+      setSubmissionErrors([message]);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create account',
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -113,15 +204,25 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (googleLoading) {
+      return;
+    }
+
+    setGoogleLoading(true);
     try {
       await signInWithGoogle();
       // Redirect is handled by Supabase OAuth
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to sign up with Google',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to sign up with Google. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -138,11 +239,11 @@ export default function SignupPage() {
             </div>
             <div className="space-y-6">
               <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                Build your Denbegnaye account
+                Build your Digital Employee account
               </h1>
               <p className="max-w-xl text-lg leading-8 text-slate-300">
-                Sign up fast, store your workflows, and unlock AI-powered marketing automation in
-                one secure place.
+                Sign up fast, store your workflows, and unlock AI-powered Work automations in one
+                secure place.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -173,19 +274,38 @@ export default function SignupPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="px-8 py-8 sm:px-10 sm:py-10">
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
                 <Button
                   style={{
                     background: '#ffffff',
                     color: '#111827',
                     borderColor: '#e5e7eb',
                   }}
-                  className="w-full flex items-center justify-center gap-3 rounded-2xl border px-5 py-4 text-sm font-semibold shadow-sm transition hover:bg-slate-100"
+                  className="w-full flex items-center justify-center gap-3 rounded-2xl border px-5 py-4 text-sm font-semibold shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
                   onClick={handleGoogleSignIn}
                   type="button"
+                  disabled={googleLoading || loading}
+                  aria-disabled={googleLoading || loading}
                 >
-                  <img src="/google-icon.svg" alt="Google" className="h-5 w-5" />
-                  Continue with Google
+                  {googleLoading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin text-slate-600" />
+                      <span className="sr-only">Signing in with Google</span>
+                    </>
+                  ) : (
+                    <>
+                      <Image
+                        src="/google-icon.svg"
+                        alt="Google"
+                        width={20}
+                        height={20}
+                        className="h-5 w-5"
+                      />
+                    </>
+                  )}
+                  <span className="ml-2">
+                    {googleLoading ? 'Signing in with Google' : 'Continue with Google'}
+                  </span>
                 </Button>
 
                 <div className="relative">
@@ -197,8 +317,20 @@ export default function SignupPage() {
                   </div>
                 </div>
 
+                <SignupProtectionPanel
+                  cooldownMessage={cooldownMessage}
+                  failedAttempts={failedAttempts}
+                  cooldownSeconds={cooldownSeconds}
+                />
+
                 {submissionErrors.length > 0 && (
-                  <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100">
+                  <div
+                    id="form-error-summary"
+                    role="alert"
+                    aria-live="assertive"
+                    aria-atomic="true"
+                    className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100"
+                  >
                     <p className="font-semibold text-rose-200">Please fix the following issues:</p>
                     <ul className="mt-2 list-disc list-inside space-y-1">
                       {submissionErrors.map(error => (
@@ -217,44 +349,65 @@ export default function SignupPage() {
                       placeholder="name@example.com"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      className="bg-slate-950/95 text-white"
+                      className="bg-slate-950/95 text-white disabled:opacity-60 disabled:cursor-not-allowed"
                       required
+                      disabled={loading || isCoolingDown}
+                      aria-invalid={!!(email.length > 0 && !isEmailValid)}
+                      aria-describedby={
+                        email.length > 0 && !isEmailValid
+                          ? 'email-error form-error-summary'
+                          : undefined
+                      }
                     />
                     {email.length > 0 && !isEmailValid && (
-                      <p className="text-sm text-rose-300">
-                        Please enter a valid email address like name@example.com.
+                      <p id="email-error" role="alert" className="text-sm text-rose-300">
+                        {emailValidationMessage ??
+                          'Please enter a valid email address like name@example.com.'}
                       </p>
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Create a secure password"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      className="bg-slate-950/95 text-white"
-                      required
-                    />
-                  </div>
+                  <PasswordField
+                    id="password"
+                    name="password"
+                    label="Password"
+                    value={password}
+                    placeholder="Create a secure password"
+                    onChange={e => setPassword(e.target.value)}
+                    disabled={loading || isCoolingDown}
+                    hasError={password.length > 0 && !passwordValidation.isValid}
+                    ariaDescribedBy={`password-requirements ${
+                      submissionErrors.length > 0 ? 'form-error-summary' : ''
+                    }`.trim()}
+                  />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm password</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={confirmPassword}
-                      onChange={e => setConfirmPassword(e.target.value)}
-                      className="bg-slate-950/95 text-white"
-                      required
-                    />
-                  </div>
+                  <PasswordField
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    label="Confirm password"
+                    value={confirmPassword}
+                    placeholder="Confirm your password"
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    disabled={loading || isCoolingDown}
+                    hasError={confirmPassword.length > 0 && password !== confirmPassword}
+                    errorMessage={
+                      confirmPassword.length > 0 && password !== confirmPassword
+                        ? 'Passwords do not match. Please confirm your password exactly.'
+                        : undefined
+                    }
+                    ariaDescribedBy={
+                      confirmPassword.length > 0 && password !== confirmPassword
+                        ? 'confirm-error form-error-summary'
+                        : undefined
+                    }
+                  />
                 </div>
 
-                <div className="rounded-3xl border border-slate-800 bg-slate-900/95 p-4 text-sm text-slate-300">
+                <div
+                  id="password-requirements"
+                  aria-live="polite"
+                  className="rounded-3xl border border-slate-800 bg-slate-900/95 p-4 text-sm text-slate-300"
+                >
                   <p className="mb-3 font-semibold text-slate-100">Password requirements</p>
                   <div className="space-y-3">
                     {passwordValidation.requirements.map(requirement => (
@@ -274,10 +427,21 @@ export default function SignupPage() {
 
                 <Button
                   type="submit"
-                  className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-500 px-5 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110"
-                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-500 px-5 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-75"
+                  disabled={loading || isCoolingDown}
+                  aria-busy={loading}
                 >
-                  {loading ? 'Creating account...' : 'Create account'}
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin text-slate-950/90" />
+                      <span>Creating account...</span>
+                      <span className="sr-only" aria-live="polite">
+                        Creating account, please wait.
+                      </span>
+                    </>
+                  ) : (
+                    'Create account'
+                  )}
                 </Button>
 
                 <p className="text-center text-sm text-slate-400">

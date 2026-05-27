@@ -44,7 +44,7 @@ const mockEdges = [
   { id: 'edge-2', source: 'node-2', target: 'node-3' },
 ];
 
-const mockExecutionResults = {
+const mockExecutionResults: Record<string, any> = {
   'node-1': {
     text: 'This is a test AI response',
     tokens: 42,

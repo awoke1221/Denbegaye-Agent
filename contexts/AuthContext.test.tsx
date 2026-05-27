@@ -17,13 +17,23 @@ describe('AuthContext', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Ensure the stubbed client methods are jest mocks we can control
-    supabase.auth.getSession = jest
+    (supabase.auth as any).getSession = jest
       .fn()
       .mockResolvedValue({ data: { session: null }, error: null });
-    supabase.auth.signInWithPassword = jest.fn();
-    supabase.auth.signUp = jest.fn();
-    supabase.auth.signInWithOAuth = jest.fn();
-    supabase.auth.signOut = jest.fn();
+    (supabase.auth as any).signInWithPassword = jest.fn();
+    (supabase.auth as any).signUp = jest.fn();
+    (supabase.auth as any).signInWithOAuth = jest.fn();
+    (supabase.auth as any).signOut = jest.fn();
+    (supabase.auth as any).onAuthStateChange = jest.fn().mockReturnValue({
+      data: { subscription: { unsubscribe: jest.fn() } },
+    });
+    (supabase as any).from = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: null, error: null }),
+      update: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockResolvedValue({ error: null }),
+    });
   });
 
   afterEach(() => {
@@ -37,19 +47,24 @@ describe('AuthContext', () => {
   it('provides auth context to children', () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
 
-    expect(result.current).toHaveProperty('user');
-    expect(result.current).toHaveProperty('loading');
-    expect(result.current).toHaveProperty('signIn');
-    expect(result.current).toHaveProperty('signUp');
-    expect(result.current).toHaveProperty('signOut');
-    expect(result.current).toHaveProperty('signInWithGoogle');
+    return waitFor(() => {
+      expect(result.current).toHaveProperty('user');
+      expect(result.current).toHaveProperty('loading');
+      expect(result.current).toHaveProperty('signIn');
+      expect(result.current).toHaveProperty('signUp');
+      expect(result.current).toHaveProperty('signOut');
+      expect(result.current).toHaveProperty('signInWithGoogle');
+    });
   });
 
   it('initializes with loading state', () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
 
-    expect(result.current.loading).toBe(true);
-    expect(result.current.user).toBe(null);
+    // Ensure we wait for any async initialization to avoid act() warnings
+    return waitFor(() => {
+      expect(result.current.loading).toBe(true);
+      expect(result.current.user).toBe(null);
+    });
   });
 
   it('loads session on mount', async () => {
@@ -82,8 +97,14 @@ describe('AuthContext', () => {
       data: { user: mockUser },
       error: null,
     });
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null }, error: null });
+    supabase.auth.getSession.mockResolvedValueOnce({
+      data: { session: { access_token: 'token-123' } },
+      error: null,
+    });
 
     const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.signIn).toBeDefined());
 
     await act(async () => {
       const signInResult = await result.current.signIn('test@example.com', 'Test123!');
@@ -114,6 +135,11 @@ describe('AuthContext', () => {
       data: { user: mockUser },
       error: null,
     });
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null }, error: null });
+    supabase.auth.getSession.mockResolvedValueOnce({
+      data: { session: { access_token: 'token-123' } },
+      error: null,
+    });
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -121,6 +147,46 @@ describe('AuthContext', () => {
       const signUpResult = await result.current.signUp('test@example.com', 'Test123!');
       // signUp returns the user on success
       expect(signUpResult).toEqual(mockUser);
+    });
+  });
+
+  it('sanitizes sign up backend errors before throwing', async () => {
+    const mockError = {
+      message: 'User already registered with this email address.',
+      status: 400,
+    };
+
+    supabase.auth.signUp.mockResolvedValue({
+      data: { user: null },
+      error: mockError,
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await act(async () => {
+      await expect(result.current.signUp('duplicate@example.com', 'Test123!')).rejects.toThrow(
+        'An account with this email already exists. Please sign in or use a different email.'
+      );
+    });
+  });
+
+  it('returns a generic message for unexpected auth errors', async () => {
+    const mockError = {
+      message: 'Unexpected internal server error: database connection failed',
+      status: 500,
+    };
+
+    supabase.auth.signInWithPassword.mockResolvedValue({
+      data: { user: null },
+      error: mockError,
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await act(async () => {
+      await expect(result.current.signIn('test@example.com', 'Test123!')).rejects.toThrow(
+        'An unexpected server error occurred. Please try again later.'
+      );
     });
   });
 

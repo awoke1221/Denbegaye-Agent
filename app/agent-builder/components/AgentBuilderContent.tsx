@@ -1836,11 +1836,20 @@ function AgentBuilderContent() {
 
     if (!profile) {
       // Create profile if it doesn't exist
+      const fullName =
+        typeof currentUser.user_metadata?.full_name === 'string'
+          ? currentUser.user_metadata.full_name
+          : '';
+      const avatarUrl =
+        typeof currentUser.user_metadata?.avatar_url === 'string'
+          ? currentUser.user_metadata.avatar_url
+          : '';
+
       const { error: createError } = await supabase.from('profiles').insert({
         id: currentUser.id,
         email: currentUser.email,
-        full_name: currentUser.user_metadata?.full_name || '',
-        avatar_url: currentUser.user_metadata?.avatar_url || '',
+        full_name: fullName,
+        avatar_url: avatarUrl,
       });
 
       if (createError) {

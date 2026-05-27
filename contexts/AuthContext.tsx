@@ -1,8 +1,20 @@
 ﻿'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { type AuthChangeEvent, type Session } from '@supabase/supabase-js';
+import { setSupabaseAuthStorageMode, supabase } from '@/lib/supabaseClient';
 import { validatePassword } from '@/lib/password-validation';
+
+interface SupabaseUserMetadata {
+  full_name?: string | null;
+  name?: string | null;
+  avatar_url?: string | null;
+  picture?: string | null;
+}
+
+interface SupabaseAppMetadata {
+  provider?: string | null;
+}
 
 interface SupabaseUser {
   id: string;
@@ -11,14 +23,14 @@ interface SupabaseUser {
   created_at?: string;
   last_sign_in_at?: string | null;
   photoURL?: string;
-  app_metadata?: any;
-  user_metadata?: any;
+  app_metadata?: SupabaseAppMetadata | null;
+  user_metadata?: SupabaseUserMetadata;
 }
 
 interface AuthContextType {
   user: SupabaseUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<SupabaseUser | null>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<SupabaseUser | null>;
   signUp: (email: string, password: string) => Promise<SupabaseUser | null>;
   signInWithGoogle: () => Promise<string | SupabaseUser | null>;
   signInWithGoogleForService: (
@@ -28,9 +40,77 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
+type AuthError = { message?: string; status?: number } | null;
+
+const isInternalAuthError = (message: string) => {
+  return /sql|server|unexpected|exception|stack trace|traceback|null value|invalid input syntax|duplicate key|internal/i.test(
+    message
+  );
+};
+
+const getFriendlyAuthError = (error: AuthError, fallback: string) => {
+  if (!error) {
+    return fallback;
+  }
+
+  const rawMessage = (error.message || '').trim();
+  const normalized = rawMessage.toLowerCase();
+
+  if (error.status === 400) {
+    if (normalized.includes('invalid email') || normalized.includes('invalid email address')) {
+      return 'Please enter a valid email address like name@example.com.';
+    }
+
+    if (
+      normalized.includes('already registered') ||
+      normalized.includes('already exists') ||
+      normalized.includes('duplicate') ||
+      normalized.includes('user already exists') ||
+      normalized.includes('email already registered')
+    ) {
+      return 'An account with this email already exists. Please sign in or use a different email.';
+    }
+
+    return fallback;
+  }
+
+  if (error.status === 401) {
+    return 'Invalid email or password. Please try again.';
+  }
+
+  if (error.status === 429) {
+    return 'Too many requests. Please try again later.';
+  }
+
+  if (error.status && error.status >= 500) {
+    return 'An unexpected server error occurred. Please try again later.';
+  }
+
+  if (error.status) {
+    return fallback;
+  }
+
+  if (isInternalAuthError(rawMessage)) {
+    return fallback;
+  }
+
+  return rawMessage || fallback;
+};
+
 /**
  * ✅ FIX: Properly typed default functions
  */
+const normalizeAuthError = (error: unknown): AuthError => {
+  if (!error || typeof error !== 'object') {
+    return null;
+  }
+
+  return {
+    message: typeof (error as any).message === 'string' ? (error as any).message : undefined,
+    status: typeof (error as any).status === 'number' ? (error as any).status : undefined,
+  };
+};
+
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
@@ -53,29 +133,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const isSessionValid = (session?: Session | null): session is Session => {
+    return Boolean(session && (!session.expires_at || session.expires_at * 1000 > Date.now()));
+  };
+
+  const getUserFromSession = (session?: Session | null): SupabaseUser | null => {
+    return isSessionValid(session) ? (session.user as SupabaseUser) : null;
+  };
+
+  const getUserFullName = (user?: SupabaseUser | null): string => {
+    const fullName = user?.user_metadata?.full_name;
+    return typeof fullName === 'string' ? fullName : '';
+  };
+
   useEffect(() => {
     let mounted = true;
 
     async function initializeAuth() {
       try {
-        // First, try to get the stored session
-        const result = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
+        const activeUser = getUserFromSession(data.session);
 
         if (!mounted) return;
 
-        if (result.data.session?.user) {
-          setUser(result.data.session.user as SupabaseUser);
-          setLoading(false);
-          return;
+        if (activeUser) {
+          setUser(activeUser);
+        } else if (data.session && !isSessionValid(data.session)) {
+          await supabase.auth.signOut();
+          setUser(null);
         } else {
           setUser(null);
-          setLoading(false);
-          return;
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);
         if (mounted) {
           setUser(null);
+        }
+      } finally {
+        if (mounted) {
           setLoading(false);
         }
       }
@@ -83,24 +178,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initializeAuth();
 
-    // Set up listener for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, session) => {
+        if (!mounted) return;
 
-      if (session?.user) {
-        // Ensure user profile exists when user signs in
-        ensureUserProfile(
-          session.user.id,
-          session.user.email || '',
-          session.user.user_metadata?.full_name || ''
-        );
-        setUser(session.user as SupabaseUser);
-      } else {
-        setUser(null);
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        const activeUser = getUserFromSession(session);
+        if (activeUser) {
+          await ensureUserProfile(
+            activeUser.id,
+            activeUser.email || '',
+            getUserFullName(activeUser)
+          );
+          setUser(activeUser);
+        } else {
+          setUser(null);
+        }
+
+        setLoading(false);
       }
-
-      setLoading(false);
-    });
+    );
 
     return () => {
       mounted = false;
@@ -108,65 +210,61 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const waitForAccessToken = async (timeout = 10000): Promise<boolean> => {
-    const deadline = Date.now() + timeout;
-
-    while (Date.now() < deadline) {
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.access_token) {
-        return true;
-      }
-      await new Promise(resolve => setTimeout(resolve, 250));
-    }
-
-    return false;
-  };
-
-  const signIn = async (email: string, password: string): Promise<SupabaseUser | null> => {
+  const signIn = async (
+    email: string,
+    password: string,
+    rememberMe = true
+  ): Promise<SupabaseUser | null> => {
     if (!email || !password) {
       throw new Error('Email and password are required.');
     }
 
-    const { error, data } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      console.error('Sign in error:', error);
-      switch (error.status) {
-        case 400:
-        case 401:
-          throw new Error('Invalid email or password. Please try again.');
-        case 429:
-          throw new Error('Too many requests, please try again later.');
-        default:
-          throw new Error(error.message || 'Failed to sign in.');
-      }
+    if (typeof window !== 'undefined') {
+      setSupabaseAuthStorageMode(rememberMe ? 'local' : 'session');
     }
 
-    if (data.user) {
-      if (
-        !data.user.email_confirmed_at &&
-        data.user.app_metadata?.provider !== 'google' &&
-        data.user.app_metadata?.provider !== 'github'
-      ) {
-        throw new Error('Please verify your email before signing in.');
+    try {
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Sign in error:', error);
+        throw new Error(
+          getFriendlyAuthError(normalizeAuthError(error), 'Unable to sign in. Please try again.')
+        );
       }
 
-      // Ensure user profile exists
-      await ensureUserProfile(
-        data.user.id,
-        data.user.email || '',
-        data.user.user_metadata?.full_name || ''
-      );
+      const sessionUser = getUserFromSession(data.session);
+      if (sessionUser) {
+        // Ensure user profile exists
+        await ensureUserProfile(
+          sessionUser.id,
+          sessionUser.email || '',
+          getUserFullName(sessionUser)
+        );
 
-      setUser(data.user as SupabaseUser);
-      await waitForAccessToken();
-      return data.user as SupabaseUser;
+        setUser(sessionUser);
+        return sessionUser;
+      }
+
+      if (data.user) {
+        if (
+          !data.user.email_confirmed_at &&
+          data.user.app_metadata?.provider !== 'google' &&
+          data.user.app_metadata?.provider !== 'github'
+        ) {
+          return data.user as SupabaseUser;
+        }
+      }
+
+      return null;
+    } finally {
+      if (typeof window !== 'undefined') {
+        setSupabaseAuthStorageMode('local');
+      }
     }
-
-    return null;
   };
 
   const signUp = async (email: string, password: string): Promise<SupabaseUser | null> => {
@@ -183,64 +281,97 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (error) {
       console.error('Sign up error:', error);
-      const message = (error.message || '').toLowerCase();
-
-      if (error.status === 400) {
-        if (message.includes('invalid email') || message.includes('invalid email address')) {
-          throw new Error('Please enter a valid email address like name@example.com.');
-        }
-
-        if (
-          message.includes('already registered') ||
-          message.includes('already exists') ||
-          message.includes('duplicate') ||
-          message.includes('user already exists')
-        ) {
-          throw new Error(
-            'An account with this email already exists. Please sign in or use a different email.'
-          );
-        }
-
-        throw new Error(
-          'Your email or password format is not valid. Please check the requirements.'
-        );
-      }
-
-      throw new Error(error.message || 'Failed to create account.');
+      throw new Error(
+        getFriendlyAuthError(
+          normalizeAuthError(error),
+          'Failed to create account. Please check your details and try again.'
+        )
+      );
     }
 
-    if (data.user) {
-      await ensureUserProfile(
-        data.user.id,
-        data.user.email || '',
-        data.user.user_metadata?.full_name || ''
-      );
-
-      setUser(data.user as SupabaseUser);
-      await waitForAccessToken();
-      return data.user as SupabaseUser;
+    if (getUserFromSession(data.session)) {
+      const sessionUser = getUserFromSession(data.session);
+      if (sessionUser) {
+        await ensureUserProfile(
+          sessionUser.id,
+          sessionUser.email || '',
+          getUserFullName(sessionUser)
+        );
+        setUser(sessionUser);
+        return sessionUser;
+      }
     }
 
     return null;
   };
 
-  const signInWithGoogle = async (): Promise<string | SupabaseUser | null> => {
+  const normalizeAppUrl = (url?: string): string | undefined => {
+    if (!url?.trim()) {
+      return undefined;
+    }
+
+    try {
+      return new URL(url.trim()).href.replace(/\/$/, '');
+    } catch (error) {
+      console.warn('Invalid NEXT_PUBLIC_APP_URL value:', url, error);
+      return undefined;
+    }
+  };
+
+  const getOAuthRedirectBase = (): string | undefined => {
+    const envAppUrl = normalizeAppUrl(process.env.NEXT_PUBLIC_APP_URL);
+    if (envAppUrl) {
+      return envAppUrl;
+    }
+
+    if (typeof window !== 'undefined') {
+      return window.location.origin.replace(/\/$/, '');
+    }
+
+    return undefined;
+  };
+
+  const buildOAuthRedirectUri = (redirectPath = '/agent-builder'): string | undefined => {
+    if (/^https?:\/\//i.test(redirectPath)) {
+      return redirectPath.replace(/\/$/, '');
+    }
+
+    const baseUrl = getOAuthRedirectBase();
+    if (!baseUrl) {
+      console.warn(
+        'Unable to determine OAuth redirect base URL. Supabase will use the default redirect behavior.'
+      );
+      return undefined;
+    }
+
+    const path = redirectPath.startsWith('/') ? redirectPath : `/${redirectPath}`;
+    return `${baseUrl}${path}`;
+  };
+
+  const signInWithGoogle = async (
+    redirectPath = '/agent-builder'
+  ): Promise<string | SupabaseUser | null> => {
+    const redirectTo = buildOAuthRedirectUri(redirectPath);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // Redirect social logins directly to agent builder so the user enters the app immediately
-        redirectTo:
-          typeof window !== 'undefined' ? `${window.location.origin}/agent-builder` : undefined,
+        redirectTo,
         scopes:
           'openid email profile https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets',
       },
     });
 
     if (error) {
-      throw new Error(error.message || 'Failed to sign in with Google.');
+      console.error('Google sign in error:', error);
+      throw new Error(
+        getFriendlyAuthError(
+          normalizeAuthError(error),
+          'Failed to sign in with Google. Please try again.'
+        )
+      );
     }
 
-    if (data?.url) {
+    if (data?.url && typeof window !== 'undefined') {
       window.location.href = data.url;
       return null;
     }
@@ -276,23 +407,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           ' https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
     }
 
-    const redirectTo =
-      typeof window !== 'undefined'
-        ? `${window.location.origin}/agent-builder?oauth_service=${encodeURIComponent(
-            service
-          )}${nodeId ? `&oauth_node=${encodeURIComponent(nodeId)}` : ''}`
-        : undefined;
+    const redirectUri = buildOAuthRedirectUri(
+      `/agent-builder?oauth_service=${encodeURIComponent(service)}${
+        nodeId ? `&oauth_node=${encodeURIComponent(nodeId)}` : ''
+      }`
+    );
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo,
+        redirectTo: redirectUri,
         scopes,
       },
     });
 
     if (error) {
-      throw new Error(error.message || `Failed to sign in with Google for ${service}.`);
+      console.error('Google service sign in error:', error);
+      throw new Error(
+        getFriendlyAuthError(
+          normalizeAuthError(error),
+          `Failed to sign in with Google for ${service}. Please try again.`
+        )
+      );
     }
 
     if (data?.url) {
@@ -314,7 +450,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const ensureUserProfile = async (userId: string, email: string, fullName: string = '') => {
     try {
       // Check if profile exists
-      const { data: existingProfile, error: fetchError } = await supabase
+      const { data: existingProfile } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)

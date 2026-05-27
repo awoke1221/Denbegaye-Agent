@@ -2,10 +2,10 @@ import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { WorkersAPI } from '../lib/workersAPI';
 
 // Mock fetch
-global.fetch = jest.fn();
+(global as any).fetch = jest.fn();
 
 describe('WorkersAPI', () => {
-  const mockFetch = jest.mocked(fetch);
+  const mockFetch = jest.mocked(fetch as unknown as jest.MockedFunction<typeof fetch>);
   let api: WorkersAPI;
 
   beforeEach(() => {

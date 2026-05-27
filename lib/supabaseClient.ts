@@ -4,6 +4,69 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+type AuthStorageMode = 'local' | 'session';
+let authStorageMode: AuthStorageMode = 'local';
+
+export const setSupabaseAuthStorageMode = (mode: AuthStorageMode) => {
+  authStorageMode = mode;
+};
+
+const getBrowserStorage = (mode: AuthStorageMode): Storage | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    return mode === 'session' ? window.sessionStorage : window.localStorage;
+  } catch (error) {
+    console.warn('Supabase storage access failed:', error);
+    return null;
+  }
+};
+
+const authStorage = {
+  getItem: (key: string) => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const localValue = window.localStorage.getItem(key);
+      if (localValue !== null) {
+        return localValue;
+      }
+      return window.sessionStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    const storage = getBrowserStorage(authStorageMode);
+    if (!storage) return;
+
+    try {
+      storage.setItem(key, value);
+      const otherStorage =
+        authStorageMode === 'session' ? window.localStorage : window.sessionStorage;
+      otherStorage.removeItem(key);
+    } catch {
+      // ignore write errors for secure storage fallback
+    }
+  },
+  removeItem: (key: string) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    } catch {
+      // ignore cleanup errors
+    }
+  },
+};
+
 let supabase: SupabaseClient;
 let supabaseAdmin: SupabaseClient | null = null;
 
@@ -50,7 +113,7 @@ if (process.env.NODE_ENV === 'test') {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        storage: authStorage,
       },
     });
 

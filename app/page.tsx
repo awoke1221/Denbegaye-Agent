@@ -66,15 +66,23 @@ export default function HomePage() {
                   <DropdownMenuTrigger asChild>
                     <div className="flex items-center gap-2 cursor-pointer">
                       <Avatar>
-                        <AvatarImage
-                          src={
-                            user.user_metadata?.avatar_url ||
-                            user.user_metadata?.picture ||
-                            user.photoURL ||
-                            undefined
-                          }
-                          alt={getUserDisplayName(user) || 'User avatar'}
-                        />
+                        {(() => {
+                          const src =
+                            typeof user.user_metadata?.avatar_url === 'string'
+                              ? user.user_metadata.avatar_url
+                              : typeof user.user_metadata?.picture === 'string'
+                                ? user.user_metadata.picture
+                                : typeof user.photoURL === 'string'
+                                  ? user.photoURL
+                                  : undefined;
+
+                          return (
+                            <AvatarImage
+                              src={src}
+                              alt={getUserDisplayName(user) || 'User avatar'}
+                            />
+                          );
+                        })()}
                         <AvatarFallback>{extractAvatarInitials(user)}</AvatarFallback>
                       </Avatar>
                     </div>

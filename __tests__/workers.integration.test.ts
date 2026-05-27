@@ -117,7 +117,7 @@ describe('Workers integration', () => {
     const edges: any[] = [];
 
     // Create a fake JWT-like token with payload { sub: 'test-user', email: 'test@example.com' }
-    const base64UrlEncode = (str: string) =>
+    const base64UrlEncode = (str: string | Buffer) =>
       Buffer.from(str)
         .toString('base64')
         .replace(/\+/g, '-')
