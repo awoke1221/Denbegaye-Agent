@@ -21,6 +21,10 @@ const getResetRedirectUrl = () => {
     return `${window.location.origin}/reset-password`;
   }
 
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/reset-password`;
+  }
+
   return undefined;
 };
 

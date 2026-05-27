@@ -328,6 +328,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return window.location.origin.replace(/\/$/, '');
     }
 
+    if (process.env.VERCEL_URL) {
+      return `https://${process.env.VERCEL_URL}`.replace(/\/$/, '');
+    }
+
     return undefined;
   };
 
