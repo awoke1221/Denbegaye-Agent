@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
@@ -15,9 +15,30 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signInWithGoogle } = useAuth();
+  const { user, loading: authLoading, signIn, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (user.email_confirmed_at || ['google', 'github'].includes(user.app_metadata?.provider)) {
+        router.replace('/agent-builder');
+      } else {
+        router.replace('/verify-email');
+      }
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#02040f] text-white">
+        <div className="rounded-3xl border border-white/10 bg-slate-950/90 px-8 py-10 text-center shadow-2xl shadow-cyan-950/20">
+          <p className="text-lg font-semibold mb-2">Checking your login state…</p>
+          <p className="text-sm text-slate-400">Please wait while we prepare your account.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +52,9 @@ export default function LoginPage() {
       });
 
       if (user && !user.email_confirmed_at) {
-        router.push('/verify-email');
+        router.replace('/verify-email');
       } else {
-        router.push('/');
+        router.replace('/agent-builder');
       }
     } catch (error: any) {
       toast({
@@ -85,7 +106,6 @@ export default function LoginPage() {
                 <ul className="mt-4 space-y-3 text-sm text-slate-400">
                   <li>• Access your saved agents instantly</li>
                   <li>• Continue from where you left off</li>
-                  <li>• Protected by Supabase auth</li>
                 </ul>
               </div>
               <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">

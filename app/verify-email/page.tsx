@@ -27,13 +27,16 @@ export default function VerifyEmailPage() {
             // session should now be stored by supabase client
             setUser(sessionResult.data.session.user);
             setIsLoading(false);
-            // If email already verified, redirect home
-            if (sessionResult.data.session.user.email_confirmed_at) {
+            // If email already verified or signed in via OAuth provider, redirect home
+            if (
+              sessionResult.data.session.user.email_confirmed_at ||
+              ['google', 'github'].includes(sessionResult.data.session.user.app_metadata?.provider)
+            ) {
               toast({
                 title: 'Email verified',
-                description: 'Welcome back! Redirecting to home...',
+                description: 'Welcome back! Redirecting to builder...',
               });
-              router.push('/');
+              router.replace('/agent-builder');
               return;
             }
             return;
@@ -58,12 +61,15 @@ export default function VerifyEmailPage() {
 
       setUser(data.user);
 
-      if (data.user.email_confirmed_at) {
+      if (
+        data.user.email_confirmed_at ||
+        ['google', 'github'].includes(data.user.app_metadata?.provider ?? '')
+      ) {
         toast({
           title: 'Email verified',
-          description: 'Welcome back! Redirecting to home...',
+          description: 'Welcome back! Redirecting to builder...',
         });
-        router.push('/');
+        router.replace('/agent-builder');
         return;
       }
 
@@ -121,12 +127,15 @@ export default function VerifyEmailPage() {
 
     setUser(data.user);
 
-    if (data.user.email_confirmed_at) {
+    if (
+      data.user.email_confirmed_at ||
+      ['google', 'github'].includes(data.user.app_metadata?.provider ?? '')
+    ) {
       toast({
         title: 'Email verified',
-        description: 'Redirecting to home...',
+        description: 'Redirecting to builder...',
       });
-      router.push('/');
+      router.replace('/agent-builder');
       return;
     }
 

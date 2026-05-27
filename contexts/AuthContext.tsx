@@ -108,6 +108,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
+  const waitForAccessToken = async (timeout = 10000): Promise<boolean> => {
+    const deadline = Date.now() + timeout;
+
+    while (Date.now() < deadline) {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.access_token) {
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+
+    return false;
+  };
+
   const signIn = async (email: string, password: string): Promise<SupabaseUser | null> => {
     if (!email || !password) {
       throw new Error('Email and password are required.');
@@ -148,6 +162,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       );
 
       setUser(data.user as SupabaseUser);
+      await waitForAccessToken();
       return data.user as SupabaseUser;
     }
 
@@ -195,7 +210,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     if (data.user) {
-      // Create user profile
       await ensureUserProfile(
         data.user.id,
         data.user.email || '',
@@ -203,6 +217,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       );
 
       setUser(data.user as SupabaseUser);
+      await waitForAccessToken();
       return data.user as SupabaseUser;
     }
 
@@ -213,8 +228,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
+        // Redirect social logins directly to agent builder so the user enters the app immediately
         redirectTo:
-          typeof window !== 'undefined' ? `${window.location.origin}/verify-email` : undefined,
+          typeof window !== 'undefined' ? `${window.location.origin}/agent-builder` : undefined,
         scopes:
           'openid email profile https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets',
       },
