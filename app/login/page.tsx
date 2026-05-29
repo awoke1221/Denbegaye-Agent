@@ -168,16 +168,6 @@ export default function LoginPage() {
   }, [authLoading, isMounted, router, user]);
 
   const isAuthInitializing = !isMounted || authLoading;
-  if (isAuthInitializing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#02040f] text-white">
-        <div className="rounded-3xl border border-white/10 bg-slate-950/90 px-8 py-10 text-center shadow-2xl shadow-cyan-950/20">
-          <p className="text-lg font-semibold mb-2">Checking your login state…</p>
-          <p className="text-sm text-slate-400">Please wait while we prepare your account.</p>
-        </div>
-      </div>
-    );
-  }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -346,6 +336,12 @@ export default function LoginPage() {
                   className="space-y-5"
                   aria-describedby={formError ? errorElementId : undefined}
                 >
+                  {isAuthInitializing ? (
+                    <div className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+                      Checking your login state. If you are already signed in, you will be
+                      redirected shortly.
+                    </div>
+                  ) : null}
                   <LoginProtectionPanel
                     cooldownMessage={cooldownMessage}
                     failedAttempts={failedAttempts}

@@ -91,19 +91,6 @@ export default function SignupPage() {
 
   // Protection state is managed by `useSignupProtection` hook
 
-  if (isAuthInitializing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#02040f] text-white">
-        <div className="rounded-3xl border border-white/10 bg-slate-950/90 px-8 py-10 text-center shadow-2xl shadow-cyan-950/20">
-          <p className="text-lg font-semibold mb-2">Checking your authentication state…</p>
-          <p className="text-sm text-slate-400">
-            Please wait while we prepare your signup experience.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (loading) {
@@ -275,6 +262,12 @@ export default function SignupPage() {
             </CardHeader>
             <CardContent className="px-8 py-8 sm:px-10 sm:py-10">
               <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
+                {isAuthInitializing ? (
+                  <div className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+                    Checking your authentication state. If you are already signed in, you will be
+                    redirected shortly.
+                  </div>
+                ) : null}
                 <Button
                   style={{
                     background: '#ffffff',
