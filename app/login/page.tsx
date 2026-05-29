@@ -248,7 +248,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#02040f] text-white">
+    <div className="relative min-h-screen overflow-hidden auth-root">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),transparent_28%),radial-gradient(circle_at_top_right,_rgba(168,85,247,0.14),transparent_30%)]" />
       <div className="pointer-events-none absolute left-0 top-1/4 h-[420px] w-[420px] -translate-x-1/4 rounded-full bg-[radial-gradient(circle,_rgba(14,165,233,0.14),transparent_48%)] blur-3xl" />
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-16">
@@ -286,7 +286,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Card className="overflow-hidden rounded-[2rem] border border-cyan-500/20 bg-slate-950/95 shadow-none">
+          <Card className="overflow-hidden rounded-[2rem] auth-card shadow-none">
             <CardHeader className="bg-slate-900/90 px-8 py-7">
               <CardTitle className="text-3xl font-semibold">Sign in</CardTitle>
               <CardDescription className="text-slate-400">

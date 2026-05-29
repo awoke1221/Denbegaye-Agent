@@ -200,6 +200,49 @@
   --muted-foreground: #d1d5db;
 }
 
+/* ===== AUTH PAGE THEME HELPERS ===== */
+:root {
+  --auth-bg: #02040f;
+  --auth-foreground: #ffffff;
+  --auth-card-bg: rgba(4, 16, 38, 0.9);
+  --auth-panel-border: rgba(255, 255, 255, 0.06);
+}
+
+.dark {
+  --auth-bg: #000000;
+  --auth-foreground: #ffffff;
+  --auth-card-bg: rgba(3, 7, 18, 0.9);
+  --auth-panel-border: rgba(255, 255, 255, 0.08);
+}
+
+.auth-root {
+  background: var(--auth-bg) !important;
+  color: var(--auth-foreground) !important;
+}
+
+.auth-card {
+  background: var(--auth-card-bg) !important;
+  border: 1px solid var(--auth-panel-border) !important;
+}
+
+/* Small responsive tweaks for auth forms */
+.auth-card .px-8 {
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
+@media (max-width: 640px) {
+  .auth-root {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .auth-card {
+    border-radius: 1rem !important;
+    padding: 1rem !important;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

@@ -144,15 +144,15 @@ export default function VerifyEmailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#02040f] text-white">
+      <div className="min-h-screen flex items-center justify-center auth-root">
         <p>Checking account status...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#02040f] text-white p-4">
-      <div className="w-full max-w-lg bg-[#041026]/90 rounded-2xl border border-cyan-500/30 p-6">
+    <div className="min-h-screen flex items-center justify-center auth-root p-4">
+      <div className="w-full max-w-lg auth-card rounded-2xl p-6">
         <div className="flex items-center gap-4 mb-6">
           <Avatar>
             <AvatarImage

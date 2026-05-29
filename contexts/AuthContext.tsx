@@ -174,6 +174,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     async function initializeAuth() {
       try {
+        // First, handle OAuth redirects that place the session in the URL fragment
+        if (typeof window !== 'undefined' && (supabase.auth as any)?.getSessionFromUrl) {
+          try {
+            const sessionResult = await (supabase.auth as any).getSessionFromUrl();
+            if (sessionResult?.data?.session) {
+              const activeUser = await getUserFromAuthState(sessionResult.data.session);
+              if (mounted && activeUser) {
+                setUser(activeUser);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (err) {
+            // ignore and continue to getSession fallback
+            console.warn('getSessionFromUrl failed during init:', err);
+          }
+        }
+
         const { data } = await supabase.auth.getSession();
         const activeUser = await getUserFromAuthState(data.session);
 
@@ -386,6 +404,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithGoogle = async (
     redirectPath = '/agent-builder'
   ): Promise<string | SupabaseUser | null> => {
+    // Ensure OAuth session is persisted across refreshes
+    if (typeof window !== 'undefined') {
+      setSupabaseAuthStorageMode('local');
+    }
+
     const redirectTo = buildOAuthRedirectUri(redirectPath);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -418,6 +441,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     service: string,
     nodeId?: string
   ): Promise<{ access_token: string; refresh_token?: string } | null> => {
+    // Persist OAuth session by default for service sign-ins
+    if (typeof window !== 'undefined') {
+      setSupabaseAuthStorageMode('local');
+    }
     let scopes = 'openid email profile';
 
     switch (service) {
