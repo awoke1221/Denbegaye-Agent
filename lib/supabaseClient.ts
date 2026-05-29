@@ -128,5 +128,58 @@ if (process.env.NODE_ENV === 'test') {
   }
 }
 
+export const getSupabaseAuthStorageInfo = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const localKeys: string[] = [];
+  const sessionKeys: string[] = [];
+
+  try {
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (key) {
+        localKeys.push(key);
+      }
+    }
+  } catch {
+    // Ignore storage access errors
+  }
+
+  try {
+    for (let i = 0; i < window.sessionStorage.length; i += 1) {
+      const key = window.sessionStorage.key(i);
+      if (key) {
+        sessionKeys.push(key);
+      }
+    }
+  } catch {
+    // Ignore storage access errors
+  }
+
+  return {
+    authStorageMode,
+    localStorageKeys: localKeys.filter(key => key.includes('supabase')),
+    sessionStorageKeys: sessionKeys.filter(key => key.includes('supabase')),
+    localStorageCount: localKeys.length,
+    sessionStorageCount: sessionKeys.length,
+  };
+};
+
+export const logSupabaseAuthStorageInfo = () => {
+  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') {
+    return;
+  }
+
+  const info = getSupabaseAuthStorageInfo();
+  if (!info) {
+    console.info('Supabase auth storage info unavailable.');
+    return;
+  }
+
+  console.info('Supabase auth storage info:', info);
+};
+
 export { supabase, supabaseAdmin };
 export default supabase;

@@ -141,6 +141,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return isSessionValid(session) ? (session.user as SupabaseUser) : null;
   };
 
+  const getUserFromAuthState = async (session?: Session | null): Promise<SupabaseUser | null> => {
+    const sessionUser = getUserFromSession(session);
+    if (sessionUser) {
+      return sessionUser;
+    }
+
+    const getUserFn = (supabase.auth as any).getUser;
+    if (typeof getUserFn !== 'function') {
+      return null;
+    }
+
+    try {
+      const { data: userData, error } = await getUserFn.call(supabase.auth);
+      if (!error && userData?.user) {
+        return userData.user as SupabaseUser;
+      }
+    } catch (error) {
+      console.warn('Supabase fallback getUser failed:', error);
+    }
+
+    return null;
+  };
+
   const getUserFullName = (user?: SupabaseUser | null): string => {
     const fullName = user?.user_metadata?.full_name;
     return typeof fullName === 'string' ? fullName : '';
@@ -152,7 +175,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     async function initializeAuth() {
       try {
         const { data } = await supabase.auth.getSession();
-        const activeUser = getUserFromSession(data.session);
+        const activeUser = await getUserFromAuthState(data.session);
 
         if (!mounted) return;
 
@@ -250,13 +273,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
+        const authUser = data.user as SupabaseUser;
+
         if (
-          !data.user.email_confirmed_at &&
-          data.user.app_metadata?.provider !== 'google' &&
-          data.user.app_metadata?.provider !== 'github'
+          !authUser.email_confirmed_at &&
+          authUser.app_metadata?.provider !== 'google' &&
+          authUser.app_metadata?.provider !== 'github'
         ) {
-          return data.user as SupabaseUser;
+          return authUser;
         }
+
+        setUser(authUser);
+        return authUser;
       }
 
       return null;
@@ -289,17 +317,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       );
     }
 
-    if (getUserFromSession(data.session)) {
-      const sessionUser = getUserFromSession(data.session);
-      if (sessionUser) {
-        await ensureUserProfile(
-          sessionUser.id,
-          sessionUser.email || '',
-          getUserFullName(sessionUser)
-        );
-        setUser(sessionUser);
-        return sessionUser;
-      }
+    const sessionUser = getUserFromSession(data.session);
+    if (sessionUser) {
+      await ensureUserProfile(
+        sessionUser.id,
+        sessionUser.email || '',
+        getUserFullName(sessionUser)
+      );
+      setUser(sessionUser);
+      return sessionUser;
+    }
+
+    if (data.user) {
+      const authUser = data.user as SupabaseUser;
+      return authUser;
     }
 
     return null;

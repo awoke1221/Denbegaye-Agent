@@ -24,6 +24,9 @@ describe('AuthContext', () => {
     (supabase.auth as any).signUp = jest.fn();
     (supabase.auth as any).signInWithOAuth = jest.fn();
     (supabase.auth as any).signOut = jest.fn();
+    (supabase.auth as any).getUser = jest
+      .fn()
+      .mockResolvedValue({ data: { user: null }, error: null });
     (supabase.auth as any).onAuthStateChange = jest.fn().mockReturnValue({
       data: { subscription: { unsubscribe: jest.fn() } },
     });
@@ -84,6 +87,26 @@ describe('AuthContext', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.user).toEqual(mockSession.user);
+  });
+
+  it('recovers auth from getUser when getSession returns no session', async () => {
+    const mockUser = { id: 'user-123', email: 'test@example.com' };
+
+    supabase.auth.getSession.mockResolvedValue({
+      data: { session: null },
+      error: null,
+    });
+
+    (supabase.auth as any).getUser = jest.fn().mockResolvedValue({
+      data: { user: mockUser },
+      error: null,
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.user).toEqual(mockUser);
   });
 
   it('handles sign in successfully', async () => {
