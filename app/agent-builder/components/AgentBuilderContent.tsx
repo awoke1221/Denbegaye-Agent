@@ -1515,12 +1515,15 @@ function AgentBuilderContent() {
         executionId: proposedExecutionId,
       };
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
       const response = await fetch(`${backendUrl}/api/agent-run`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 
