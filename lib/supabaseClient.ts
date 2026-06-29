@@ -31,11 +31,11 @@ const authStorage = {
     }
 
     try {
-      const localValue = window.localStorage.getItem(key);
-      if (localValue !== null) {
-        return localValue;
+      const sessionValue = window.sessionStorage.getItem(key);
+      if (sessionValue !== null) {
+        return sessionValue;
       }
-      return window.sessionStorage.getItem(key);
+      return window.localStorage.getItem(key);
     } catch {
       return null;
     }
@@ -165,6 +165,45 @@ export const getSupabaseAuthStorageInfo = () => {
     localStorageCount: localKeys.length,
     sessionStorageCount: sessionKeys.length,
   };
+};
+
+export const inferSupabaseAuthStorageMode = (): AuthStorageMode => {
+  if (typeof window === 'undefined') {
+    return authStorageMode;
+  }
+
+  try {
+    let hasLocal = false;
+    let hasSession = false;
+
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (key?.includes('supabase')) {
+        hasLocal = true;
+        break;
+      }
+    }
+
+    for (let i = 0; i < window.sessionStorage.length; i += 1) {
+      const key = window.sessionStorage.key(i);
+      if (key?.includes('supabase')) {
+        hasSession = true;
+        break;
+      }
+    }
+
+    if (hasSession && !hasLocal) {
+      return 'session';
+    }
+
+    if (hasLocal) {
+      return 'local';
+    }
+  } catch {
+    // Ignore storage access errors
+  }
+
+  return authStorageMode;
 };
 
 export const logSupabaseAuthStorageInfo = () => {

@@ -25,13 +25,14 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
 }
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps) {
-  const post = await getBlogPost(params.slug);
+  const { slug } = await params;
+  const post = await getBlogPost(slug);
 
   if (!post) {
     return {
@@ -47,7 +48,8 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const post = await getBlogPost(params.slug);
+  const { slug } = await params;
+  const post = await getBlogPost(slug);
 
   if (!post) {
     notFound();

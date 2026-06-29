@@ -172,6 +172,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
+    const handleAuthStateChange = async (event: AuthChangeEvent, session: Session | null) => {
+      if (!mounted) return;
+
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      const activeUser = await getUserFromAuthState(session);
+      if (activeUser) {
+        await ensureUserProfile(activeUser.id, activeUser.email || '', getUserFullName(activeUser));
+        setUser(activeUser);
+      } else {
+        setUser(null);
+      }
+
+      setLoading(false);
+    };
+
     async function initializeAuth() {
       try {
         // First, handle OAuth redirects that place the session in the URL fragment
@@ -193,14 +213,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         const { data } = await supabase.auth.getSession();
-        const activeUser = await getUserFromAuthState(data.session);
+        let activeUser = await getUserFromAuthState(data.session);
+
+        if (!activeUser && data.session && !isSessionValid(data.session)) {
+          if (typeof (supabase.auth as any).refreshSession === 'function') {
+            try {
+              const refreshResult = await (supabase.auth as any).refreshSession();
+              if (refreshResult?.data?.session) {
+                activeUser = await getUserFromAuthState(refreshResult.data.session);
+              }
+            } catch (refreshError) {
+              console.warn('Supabase refreshSession failed during init:', refreshError);
+            }
+          }
+        }
 
         if (!mounted) return;
 
         if (activeUser) {
           setUser(activeUser);
         } else if (data.session && !isSessionValid(data.session)) {
-          await supabase.auth.signOut();
+          try {
+            await supabase.auth.signOut();
+          } catch (signOutError) {
+            console.warn('Failed to sign out expired session during init:', signOutError);
+          }
           setUser(null);
         } else {
           setUser(null);
@@ -217,33 +254,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
+    const { data: authListener } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+
     initializeAuth();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session) => {
-        if (!mounted) return;
-
-        if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-
-        const activeUser = getUserFromSession(session);
-        if (activeUser) {
-          await ensureUserProfile(
-            activeUser.id,
-            activeUser.email || '',
-            getUserFullName(activeUser)
-          );
-          setUser(activeUser);
-        } else {
-          setUser(null);
-        }
-
-        setLoading(false);
-      }
-    );
 
     return () => {
       mounted = false;
