@@ -5,7 +5,7 @@
  * Can be extended: Paypal, Stripe, etc.
  */
 
-import { supabase } from '../supabaseClient';
+import { supabase, supabaseAdmin } from '../supabaseClient';
 import {
   createCheckoutSession,
   getTransactionStatus,
@@ -16,6 +16,9 @@ import {
   type Currency,
   type PaymentMethod,
 } from './lakipay';
+import { createPayPalOrder, capturePayPalOrder } from './paypal';
+
+const paymentDatabase = supabaseAdmin || supabase;
 
 export type PaymentGateway = 'lakipay' | 'stripe' | 'paypal';
 
@@ -27,6 +30,7 @@ export interface PaymentSessionRequest {
   currency?: Currency;
   description?: string;
   paymentMethods?: PaymentMethod[];
+  gateway?: PaymentGateway;
 }
 
 export interface PaymentSessionResponse {
@@ -46,6 +50,7 @@ export interface PaymentVerificationRequest {
   transactionId: string;
   userId: string;
   planId: string;
+  gateway?: PaymentGateway;
 }
 
 export interface PaymentVerificationResponse {
@@ -70,16 +75,14 @@ export async function createPaymentSession(
   request: PaymentSessionRequest
 ): Promise<PaymentSessionResponse> {
   try {
-    console.log('createPaymentSession called with', JSON.stringify(request));
-    // Get plan details
-    const { data: plan, error: planError } = await supabase
+    const gateway = request.gateway || 'paypal';
+
+    const { data: plan, error: planError } = await paymentDatabase
       .from('pricing_plans')
       .select('*')
       .eq('id', request.planId)
       .eq('is_active', true)
       .single();
-
-    console.log('createPaymentSession: plan query result', { plan, planError });
 
     if (planError || !plan) {
       return {
@@ -91,8 +94,7 @@ export async function createPaymentSession(
       };
     }
 
-    // Get user details
-    const { data: user, error: userError } = await supabase
+    const { data: user, error: userError } = await paymentDatabase
       .from('profiles')
       .select('email, full_name')
       .eq('id', request.userId)
@@ -108,16 +110,65 @@ export async function createPaymentSession(
       };
     }
 
-    // Generate reference ID for this subscription
-    const reference = generateSubscriptionReference(request.userId, request.planId);
-
-    // Determine amount based on billing cycle
     const amount = request.billingCycle === 'yearly' ? plan.price_yearly : plan.price_monthly;
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
 
-    // Get callback URLs
-    const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+    if (gateway === 'paypal') {
+      const paypalOrder = await createPayPalOrder({
+        amount,
+        currency: (request.currency || 'USD') as 'USD' | 'ETB',
+        description: `${plan.name} - ${request.billingCycle} subscription`,
+        userId: request.userId,
+        planId: request.planId,
+        billingCycle: request.billingCycle,
+        returnUrl: `${baseUrl}/payment-result?success=true&gateway=paypal&planId=${request.planId}`,
+        cancelUrl: `${baseUrl}/payment-result?failed=true&gateway=paypal&planId=${request.planId}`,
+      });
 
-    // Create LakiPay checkout session
+      if (!paypalOrder.success || !paypalOrder.orderId) {
+        return {
+          success: false,
+          error: paypalOrder.error || {
+            code: 'PAYPAL_ERROR',
+            message: 'Unable to create PayPal checkout session.',
+          },
+        };
+      }
+
+      const { error: txError } = await paymentDatabase.from('pending_transactions').insert({
+        user_id: request.userId,
+        plan_id: request.planId,
+        lakipay_transaction_id: paypalOrder.orderId,
+        reference: paypalOrder.orderId,
+        amount: amount,
+        currency: (request.currency || 'USD').toUpperCase(),
+        billing_cycle: request.billingCycle,
+        status: 'pending',
+        metadata: {
+          payment_gateway: 'paypal',
+          paypal_order_id: paypalOrder.orderId,
+          plan_name: plan.name,
+          billing_cycle: request.billingCycle,
+        },
+        created_at: new Date().toISOString(),
+      });
+
+      if (txError) {
+        console.error('Failed to store pending PayPal transaction:', txError);
+      }
+
+      return {
+        success: true,
+        data: {
+          sessionUrl: paypalOrder.approvalUrl || '',
+          transactionId: paypalOrder.orderId,
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        },
+      };
+    }
+
+    const reference = generateSubscriptionReference(request.userId, request.planId);
     const checkoutResponse = await createCheckoutSession({
       amount: formatAmount(amount),
       currency: request.currency || 'ETB',
@@ -153,8 +204,7 @@ export async function createPaymentSession(
       };
     }
 
-    // Store pending transaction
-    const { error: txError } = await supabase.from('pending_transactions').insert({
+    const { error: txError } = await paymentDatabase.from('pending_transactions').insert({
       user_id: request.userId,
       plan_id: request.planId,
       lakipay_transaction_id: checkoutResponse.data?.lakipay_transaction_id,
@@ -198,7 +248,117 @@ export async function verifyPayment(
   request: PaymentVerificationRequest
 ): Promise<PaymentVerificationResponse> {
   try {
-    // Get transaction status from LakiPay
+    const { data: pending } = await paymentDatabase
+      .from('pending_transactions')
+      .select('*')
+      .or(
+        `lakipay_transaction_id.eq.${request.transactionId},reference.eq.${request.transactionId}`
+      )
+      .maybeSingle();
+
+    const gateway = request.gateway || pending?.metadata?.payment_gateway || 'lakipay';
+
+    if (gateway === 'paypal') {
+      const capture = await capturePayPalOrder(request.transactionId);
+
+      if (!capture.success) {
+        return {
+          success: false,
+          status: 'FAILED',
+          message: capture.error?.message || 'PayPal payment capture failed.',
+        };
+      }
+
+      const { data: plan } = await paymentDatabase
+        .from('pricing_plans')
+        .select('tier, name, price_monthly, price_yearly')
+        .eq('id', request.planId)
+        .single();
+
+      const billingCycle = pending?.billing_cycle || 'monthly';
+      const now = new Date();
+      const periodEnd = new Date(
+        now.getTime() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000
+      );
+
+      const { error: subError } = await paymentDatabase.from('user_subscriptions').upsert(
+        {
+          user_id: request.userId,
+          plan_id: request.planId,
+          lakipay_transaction_id: request.transactionId,
+          status: 'active',
+          billing_cycle: billingCycle,
+          current_period_start: now.toISOString(),
+          current_period_end: periodEnd.toISOString(),
+          cancel_at_period_end: false,
+          updated_at: now.toISOString(),
+        },
+        { onConflict: 'user_id' }
+      );
+
+      if (subError) {
+        console.error('Failed to create PayPal subscription:', subError);
+        return {
+          success: false,
+          status: 'ERROR',
+          message: 'Failed to activate subscription',
+        };
+      }
+
+      const { error: profileError } = await paymentDatabase
+        .from('profiles')
+        .update({
+          subscription_tier: plan?.tier || 'pro',
+          updated_at: now.toISOString(),
+        })
+        .eq('id', request.userId);
+
+      if (profileError) {
+        console.error('Failed to update PayPal profile tier:', profileError);
+      }
+
+      const { error: paymentError } = await paymentDatabase.from('payment_history').insert({
+        user_id: request.userId,
+        subscription_id: request.planId,
+        lakipay_transaction_id: request.transactionId,
+        amount: Number(capture.amount || 0),
+        currency: (capture.currency || 'USD').toLowerCase(),
+        status: 'succeeded',
+        description: `PayPal subscription payment for ${plan?.tier || 'plan'}`,
+        metadata: {
+          payment_gateway: 'paypal',
+          paypal_order_id: request.transactionId,
+          plan_id: request.planId,
+          billing_cycle: billingCycle,
+        },
+        created_at: now.toISOString(),
+      });
+
+      if (paymentError) {
+        console.error('Failed to log PayPal payment:', paymentError);
+      }
+
+      await paymentDatabase
+        .from('pending_transactions')
+        .update({ status: 'completed', updated_at: now.toISOString() })
+        .eq('lakipay_transaction_id', request.transactionId);
+
+      return {
+        success: true,
+        status: 'COMPLETED',
+        message: 'PayPal payment verified and subscription activated',
+        data: {
+          transactionId: request.transactionId,
+          userId: request.userId,
+          planId: request.planId,
+          amount: Number(capture.amount || 0),
+          currency: (capture.currency || 'USD') as Currency,
+          paymentMethod: 'ALL' as PaymentMethod,
+          completedAt: capture.capturedAt || now.toISOString(),
+        },
+      };
+    }
+
     const transaction = await getTransactionStatus(request.transactionId);
 
     if (!transaction) {
@@ -217,29 +377,19 @@ export async function verifyPayment(
       };
     }
 
-    // Payment is successful - update subscription in database
-    const { data: plan } = await supabase
+    const { data: plan } = await paymentDatabase
       .from('pricing_plans')
       .select('tier')
       .eq('id', request.planId)
       .single();
 
-    // Get billing cycle from metadata
-    const { data: pending } = await supabase
-      .from('pending_transactions')
-      .select('billing_cycle')
-      .eq('lakipay_transaction_id', request.transactionId)
-      .single();
-
     const billingCycle = pending?.billing_cycle || 'monthly';
-
-    // Create/update subscription
     const now = new Date();
     const periodEnd = new Date(
       now.getTime() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000
     );
 
-    const { error: subError } = await supabase.from('user_subscriptions').upsert(
+    const { error: subError } = await paymentDatabase.from('user_subscriptions').upsert(
       {
         user_id: request.userId,
         plan_id: request.planId,
@@ -263,8 +413,7 @@ export async function verifyPayment(
       };
     }
 
-    // Update user profile tier
-    const { error: profileError } = await supabase
+    const { error: profileError } = await paymentDatabase
       .from('profiles')
       .update({
         subscription_tier: plan?.tier || 'pro',
@@ -276,8 +425,7 @@ export async function verifyPayment(
       console.error('Failed to update profile:', profileError);
     }
 
-    // Log payment
-    const { error: paymentError } = await supabase.from('payment_history').insert({
+    const { error: paymentError } = await paymentDatabase.from('payment_history').insert({
       user_id: request.userId,
       subscription_id: request.planId,
       lakipay_transaction_id: request.transactionId,
@@ -293,8 +441,7 @@ export async function verifyPayment(
       console.error('Failed to log payment:', paymentError);
     }
 
-    // Mark pending transaction as completed
-    const { error: markError } = await supabase
+    const { error: markError } = await paymentDatabase
       .from('pending_transactions')
       .update({ status: 'completed', updated_at: now.toISOString() })
       .eq('lakipay_transaction_id', request.transactionId);
@@ -337,7 +484,7 @@ export async function handlePaymentWebhook(
 ) {
   try {
     // Get pending transaction
-    const { data: pending } = await supabase
+    const { data: pending } = await paymentDatabase
       .from('pending_transactions')
       .select('*')
       .eq('lakipay_transaction_id', transactionId)
@@ -357,7 +504,7 @@ export async function handlePaymentWebhook(
       });
     } else if (status === 'FAILED' || status === 'CANCELLED') {
       // Mark as failed
-      const { error } = await supabase
+      const { error } = await paymentDatabase
         .from('pending_transactions')
         .update({
           status: 'failed',
@@ -370,7 +517,7 @@ export async function handlePaymentWebhook(
       }
 
       // Log failed payment
-      await supabase.from('payment_history').insert({
+      await paymentDatabase.from('payment_history').insert({
         user_id: pending.user_id,
         lakipay_transaction_id: transactionId,
         amount: pending.amount,

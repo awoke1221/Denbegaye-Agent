@@ -1,6 +1,14 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useRef, useState, type ComponentType, type MouseEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type MouseEvent,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import {
   addEdge,
@@ -508,6 +516,33 @@ function AgentBuilderContent() {
   const [, setCurrentExecutingNodeId] = useState<string | null>(null);
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
   const [, setIsLoadingTemplate] = useState(false);
+
+  // Agent execution type — auto-detected from nodes, user can override via UI
+  const [selectedAgentType, setSelectedAgentType] = useState<string>('workflow');
+
+  // Detect the appropriate agentType from the workflow nodes
+  const detectAgentType = useCallback((workflowNodes: Node[]): string => {
+    const nodeTypes = workflowNodes.map(n => n.type || '');
+    const hasNode = (type: string) => nodeTypes.some(t => t.startsWith(type));
+
+    if (hasNode('agent-react')) return 'react';
+    if (hasNode('agent-reasoning')) return 'react';
+    if (hasNode('agent-planning') || hasNode('agent-plan')) return 'plan-execute';
+    if (hasNode('agent-reflect')) return 'reflexion';
+    if (hasNode('agent-reason')) return 'react';
+    // All others use standard DAG workflow
+    return 'workflow';
+  }, []);
+
+  // Auto-detect on initial load and when nodes change significantly
+  useEffect(() => {
+    const detected = detectAgentType(nodes);
+    setSelectedAgentType(prev =>
+      ['workflow', 'langgraph', 'react', 'plan-execute', 'reflexion'].includes(prev)
+        ? detected
+        : prev
+    );
+  }, [nodes.length > 0 ? nodes.map(n => n.type).join(',') : '', detectAgentType]);
 
   // Use the extracted effects hook
   const { approvalRequest, submitApproval } = useAgentBuilderEffects({
@@ -1505,6 +1540,10 @@ function AgentBuilderContent() {
       const socket = getSharedSocket();
       socket.emit('subscribe:execution', proposedExecutionId);
 
+      // Determine the execution strategy: auto-detect from nodes or use user selection
+      const effectiveAgentType =
+        selectedAgentType === 'auto' ? detectAgentType(nodes) : selectedAgentType;
+
       const payload = {
         agentId: undefined, // Always create new agent for execution to avoid ID conflicts
         agentName: workflowName || 'Unnamed Agent',
@@ -1513,6 +1552,7 @@ function AgentBuilderContent() {
         input: {},
         apiKeys,
         executionId: proposedExecutionId,
+        agentType: effectiveAgentType, // <-- Now passed! Enables ReAct, Plan-Execute, Reflexion strategies
       };
 
       const headers: Record<string, string> = {
@@ -2058,6 +2098,8 @@ function AgentBuilderContent() {
               isAdmin={isAdmin}
               reset={reset}
               isExecuting={isExecuting}
+              selectedAgentType={selectedAgentType}
+              setSelectedAgentType={setSelectedAgentType}
             />
 
             <Dialog open={!!approvalRequest} onOpenChange={() => {}}>

@@ -27,7 +27,8 @@ export default function PaymentResultPage() {
   const params = useSearchParams();
   const success = params.get('success') === 'true';
   const failed = params.get('failed') === 'true';
-  const transactionId = params.get('tx');
+  const gateway = params.get('gateway') || 'paypal';
+  const transactionId = params.get('tx') || params.get('token');
   const planId = params.get('planId');
 
   const [loading, setLoading] = useState(false);
@@ -46,7 +47,11 @@ export default function PaymentResultPage() {
   const verifyPayment = async () => {
     try {
       setLoading(true);
-      setStatusMessage('Confirming payment with LakiPay...');
+      setStatusMessage(
+        gateway === 'paypal'
+          ? 'Confirming payment with PayPal...'
+          : 'Confirming payment with LakiPay...'
+      );
 
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session?.access_token) {
@@ -63,6 +68,7 @@ export default function PaymentResultPage() {
         body: JSON.stringify({
           transactionId,
           planId,
+          gateway,
         }),
       });
 
@@ -76,6 +82,7 @@ export default function PaymentResultPage() {
 
       setPaymentStatus(result.data?.status || 'completed');
       setStatusMessage('Payment confirmed! Your subscription is now active.');
+      router.replace('/agent-builder');
     } catch (error) {
       console.error('Payment result error:', error);
       setErrorMessage('Unexpected error while verifying payment.');

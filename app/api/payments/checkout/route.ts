@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, supabaseAdmin } from '@/lib/supabaseClient';
 import { createPaymentSession } from '@/lib/payments/paymentService';
 
 /**
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Parse request body
-    const { planId, billingCycle, paymentMethod } = await request.json();
+    const { planId, billingCycle, paymentMethod, paymentGateway } = await request.json();
 
     if (!planId || !billingCycle) {
       return NextResponse.json({ error: 'Missing planId or billingCycle' }, { status: 400 });
@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Get plan details
-    const { data: plan, error: planError } = await supabase
+    const paymentDatabase = supabaseAdmin || supabase;
+    const { data: plan, error: planError } = await paymentDatabase
       .from('pricing_plans')
       .select('*')
       .eq('id', planId)
@@ -58,7 +59,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan price' }, { status: 400 });
     }
 
-    // 6. Create payment session
+    const gateway = paymentGateway || (paymentMethod === 'PAYPAL' ? 'paypal' : 'paypal');
+
     const paymentMethods = paymentMethod ? [paymentMethod] : undefined;
 
     const sessionResponse = await createPaymentSession({
@@ -66,8 +68,9 @@ export async function POST(request: NextRequest) {
       planId: planId,
       billingCycle: billingCycle,
       amount: amount,
-      currency: 'ETB', // Default to Ethiopian Birr
+      currency: gateway === 'paypal' ? 'USD' : 'ETB',
       paymentMethods: paymentMethods,
+      gateway,
     });
 
     if (!sessionResponse.success) {

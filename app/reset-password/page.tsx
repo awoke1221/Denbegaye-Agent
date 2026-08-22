@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowRight, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,6 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(true);
-  const [isReady, setIsReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +38,7 @@ export default function ResetPasswordPage() {
         const result = await (supabase.auth as any).getSessionFromUrl();
         const session = result?.data?.session;
 
-        if (session?.user) {
-          setIsReady(true);
-        } else {
+        if (!session?.user) {
           setError('The password reset link is invalid or has expired.');
         }
       } catch (fetchError) {
@@ -101,53 +99,61 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden auth-root">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),transparent_28%),radial-gradient(circle_at_top_right,_rgba(168,85,247,0.14),transparent_30%)]" />
-      <div className="pointer-events-none absolute right-0 top-1/4 h-[420px] w-[420px] translate-x-1/4 rounded-full bg-[radial-gradient(circle,_rgba(168,85,247,0.16),transparent_48%)] blur-3xl" />
-      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-16">
-        <div className="grid gap-10 rounded-[2rem] border border-white/10 bg-slate-950/75 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl p-6 lg:grid-cols-[1.3fr_1fr] lg:p-0">
-          <div className="flex flex-col justify-center gap-8 rounded-[2rem] bg-slate-950/90 px-8 py-10 lg:px-10 lg:py-12">
-            <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200">
-              Secure reset
-            </div>
+    <div className="relative min-h-screen overflow-hidden bg-[#020817] text-slate-100">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.16),transparent_26%)]" />
+      <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10">
+        <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/80 shadow-[0_40px_120px_rgba(15,23,42,0.9)] backdrop-blur-xl lg:grid-cols-[1.15fr_0.95fr]">
+          <div className="flex flex-col justify-between bg-slate-950/80 px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
             <div className="space-y-6">
-              <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                Reset your password
-              </h1>
-              <p className="max-w-xl text-lg leading-8 text-slate-300">
-                Finish resetting your password using the secure link we sent to your email. Once
-                updated, you can sign in with your new password.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">
-                <p className="font-semibold text-slate-100">Safe recovery</p>
-                <ul className="mt-4 space-y-3 text-sm text-slate-400">
-                  <li>• Token verification happens in your browser</li>
-                  <li>• Password is updated directly in Supabase</li>
-                </ul>
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+                <LockKeyhole className="h-3.5 w-3.5" />
+                Secure reset
               </div>
-              <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">
-                <p className="font-semibold text-slate-100">Next steps</p>
-                <ul className="mt-4 space-y-3 text-sm text-slate-400">
-                  <li>• Enter a strong new password</li>
-                  <li>• Confirm the password exactly</li>
-                  <li>• Sign in again once reset is complete</li>
-                </ul>
+
+              <div className="space-y-5">
+                <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                  Choose a new password
+                </h1>
+                <p className="max-w-lg text-base leading-7 text-slate-300 sm:text-lg">
+                  Create a strong password to keep your account protected. Once updated, you’ll be
+                  ready to sign back in immediately.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <p className="text-base font-semibold text-white">Safe recovery</p>
+                <p className="mt-2 text-sm text-slate-300">
+                  Password recovery is verified in-browser before updates are applied.
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
+                  <ArrowRight className="h-5 w-5" />
+                </div>
+                <p className="text-base font-semibold text-white">Ready to sign in</p>
+                <p className="mt-2 text-sm text-slate-300">
+                  Finish reset and continue where you left off.
+                </p>
               </div>
             </div>
           </div>
 
-          <Card className="overflow-hidden rounded-[2rem] border border-cyan-500/20 bg-slate-950/95 shadow-none">
-            <CardHeader className="bg-slate-900/90 px-8 py-7">
-              <CardTitle className="text-3xl font-semibold">Reset password</CardTitle>
-              <CardDescription className="text-slate-400">
+          <Card className="border-0 bg-slate-900/90 shadow-none">
+            <CardHeader className="px-6 pb-4 pt-7 sm:px-8">
+              <CardTitle className="text-3xl font-bold text-white">Reset password</CardTitle>
+              <CardDescription className="mt-2 text-slate-400">
                 Create a new password for your account.
               </CardDescription>
             </CardHeader>
-            <CardContent className="px-8 py-8 sm:px-10 sm:py-10">
+            <CardContent className="px-6 pb-8 sm:px-8">
               {isVerifying ? (
-                <div className="rounded-2xl border border-white/10 bg-slate-900/80 px-6 py-10 text-center text-slate-300">
+                <div className="rounded-2xl border border-white/10 bg-slate-950/80 px-6 py-10 text-center text-slate-300">
                   Checking your reset link…
                 </div>
               ) : error ? (
@@ -159,12 +165,16 @@ export default function ResetPasswordPage() {
                     {error}
                   </div>
                   <div className="flex flex-col gap-3">
-                    <Button variant="secondary" onClick={() => router.replace('/forgot-password')}>
+                    <Button
+                      variant="secondary"
+                      onClick={() => router.replace('/forgot-password')}
+                      className="border-white/10 bg-white/5 text-white hover:bg-white/10"
+                    >
                       Request a new reset link
                     </Button>
                     <Link
                       href="/login"
-                      className="text-sm font-medium text-cyan-300 hover:text-cyan-200"
+                      className="text-center text-sm font-medium text-cyan-300 transition hover:text-cyan-200"
                     >
                       Back to sign in
                     </Link>
@@ -180,17 +190,11 @@ export default function ResetPasswordPage() {
                       {success}
                     </div>
                   ) : null}
-                  {error ? (
-                    <div
-                      role="alert"
-                      className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200"
-                    >
-                      {error}
-                    </div>
-                  ) : null}
 
-                  <div className="space-y-3">
-                    <Label htmlFor="reset-password">New password</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-password" className="text-slate-200">
+                      New password
+                    </Label>
                     <Input
                       id="reset-password"
                       name="password"
@@ -199,14 +203,16 @@ export default function ResetPasswordPage() {
                       autoComplete="new-password"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      className="bg-slate-950/95 text-white"
+                      className="border-slate-700 bg-slate-950/90 text-white placeholder:text-slate-500"
                       required
                       disabled={submitting}
                     />
                   </div>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="confirm-password">Confirm password</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password" className="text-slate-200">
+                      Confirm password
+                    </Label>
                     <Input
                       id="confirm-password"
                       name="confirmPassword"
@@ -215,7 +221,7 @@ export default function ResetPasswordPage() {
                       autoComplete="new-password"
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
-                      className="bg-slate-950/95 text-white"
+                      className="border-slate-700 bg-slate-950/90 text-white placeholder:text-slate-500"
                       required
                       disabled={submitting}
                     />
@@ -227,12 +233,15 @@ export default function ResetPasswordPage() {
                     disabled={submitting}
                     aria-busy={submitting}
                   >
-                    {submitting ? 'Updating password…' : 'Update password'}
+                    {submitting ? 'Updating password...' : 'Update password'}
                   </Button>
 
                   <p className="text-center text-sm text-slate-400">
                     Remembered your password?{' '}
-                    <Link href="/login" className="font-medium text-cyan-300 hover:text-cyan-200">
+                    <Link
+                      href="/login"
+                      className="font-medium text-cyan-300 transition hover:text-cyan-200"
+                    >
                       Sign in
                     </Link>
                   </p>

@@ -3,7 +3,27 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Eye, EyeOff, Save, Play, Plus, RotateCcw, Zap, Star } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Eye,
+  EyeOff,
+  Save,
+  Play,
+  Plus,
+  RotateCcw,
+  Zap,
+  Star,
+  Cpu,
+  GitBranch,
+  RefreshCw,
+  Layers,
+} from 'lucide-react';
 
 type ExecutionControlsProps = {
   workflowName: string;
@@ -22,7 +42,43 @@ type ExecutionControlsProps = {
   isAdmin?: boolean;
   reset: () => void;
   isExecuting: boolean;
+  selectedAgentType: string;
+  setSelectedAgentType: (value: string) => void;
 };
+
+const AGENT_TYPE_OPTIONS = [
+  {
+    value: 'workflow',
+    label: 'Workflow (DAG)',
+    icon: GitBranch,
+    description: 'Standard parallel execution based on node connections',
+  },
+  {
+    value: 'langgraph',
+    label: 'LangGraph ReAct',
+    icon: Zap,
+    description:
+      'True ReAct loop with tool calling, checkpointing, token tracking — uses actual LangGraph library',
+  },
+  {
+    value: 'react',
+    label: 'ReAct Agent',
+    icon: RefreshCw,
+    description: 'Reasoning + Acting loop — AI decides each step',
+  },
+  {
+    value: 'plan-execute',
+    label: 'Plan-Execute',
+    icon: Layers,
+    description: 'AI generates a plan, then executes step-by-step',
+  },
+  {
+    value: 'reflexion',
+    label: 'Reflexion Agent',
+    icon: Cpu,
+    description: 'Execute → Self-reflect → Improve → Re-execute',
+  },
+];
 
 export function ExecutionControls({
   workflowName,
@@ -41,6 +97,8 @@ export function ExecutionControls({
   isAdmin = false,
   reset,
   isExecuting,
+  selectedAgentType,
+  setSelectedAgentType,
 }: ExecutionControlsProps) {
   return (
     <div className="min-h-[5rem] bg-white/90 dark:bg-slate-800/85 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 flex flex-col justify-between px-6 py-4 shadow-lg">
@@ -89,6 +147,37 @@ export function ExecutionControls({
           Title only — keep your agent name concise and easy to identify.
         </p>
       </div>
+
+      {/* Agent Execution Strategy Selector */}
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">
+          Execution Strategy:
+        </span>
+        <Select value={selectedAgentType} onValueChange={setSelectedAgentType}>
+          <SelectTrigger className="w-[180px] h-8 text-xs border-slate-300 dark:border-slate-600">
+            <SelectValue placeholder="Select strategy" />
+          </SelectTrigger>
+          <SelectContent>
+            {AGENT_TYPE_OPTIONS.map(option => {
+              const Icon = option.icon;
+              return (
+                <SelectItem key={option.value} value={option.value} className="text-xs">
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-3.5 h-3.5 text-slate-500" />
+                    <span>{option.label}</span>
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+        {AGENT_TYPE_OPTIONS.find(o => o.value === selectedAgentType) && (
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 italic max-w-[280px] truncate">
+            {AGENT_TYPE_OPTIONS.find(o => o.value === selectedAgentType)?.description}
+          </span>
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
         <Button
           variant={showNodePalette ? 'default' : 'outline'}

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
-import { Sparkles, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Sparkles, Eye, EyeOff, Loader2, ArrowRight, ShieldCheck, Bot, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -233,7 +233,6 @@ export default function LoginPage() {
 
     try {
       await signInWithGoogle();
-      // Redirect is handled by Supabase OAuth
     } catch (error: unknown) {
       const message = sanitizeAuthErrorMessage(error);
       setFormError(message);
@@ -248,52 +247,63 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden auth-root">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),transparent_28%),radial-gradient(circle_at_top_right,_rgba(168,85,247,0.14),transparent_30%)]" />
-      <div className="pointer-events-none absolute left-0 top-1/4 h-[420px] w-[420px] -translate-x-1/4 rounded-full bg-[radial-gradient(circle,_rgba(14,165,233,0.14),transparent_48%)] blur-3xl" />
-      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-16">
-        <div className="grid gap-10 rounded-[2rem] border border-white/10 bg-slate-950/75 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl p-6 lg:grid-cols-[1.3fr_1fr] lg:p-0">
-          <div className="flex flex-col justify-center gap-8 rounded-[2rem] bg-slate-950/90 px-8 py-10 lg:px-10 lg:py-12">
-            <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200">
-              <Sparkles className="h-4 w-4" />
-              Fast and friendly login
-            </div>
+    <div className="relative min-h-screen overflow-hidden bg-[#020817] text-slate-100">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.18),transparent_28%)]" />
+      <div className="pointer-events-none absolute left-8 top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-10 right-8 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl" />
+
+      <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10">
+        <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/75 shadow-[0_40px_120px_rgba(15,23,42,0.9)] backdrop-blur-xl lg:grid-cols-[1.15fr_0.95fr]">
+          <div className="flex flex-col justify-between bg-slate-950/80 px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
             <div className="space-y-6">
-              <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                Welcome back to Digital Employee
-              </h1>
-              <p className="max-w-xl text-lg leading-8 text-slate-300">
-                Sign in quickly with Google or your email to continue managing your AI agents and
-                automation workflows.
-              </p>
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+                <Sparkles className="h-3.5 w-3.5" />
+                Denbegnaye
+              </div>
+
+              <div className="space-y-5">
+                <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                  Welcome back
+                </h1>
+                <p className="max-w-lg text-base leading-7 text-slate-300 sm:text-lg">
+                  Sign in to continue building AI agents, automations, and workflows with a modern
+                  execution engine designed for speed and clarity.
+                </p>
+              </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">
-                <p className="font-semibold text-slate-100">Why login?</p>
-                <ul className="mt-4 space-y-3 text-sm text-slate-400">
-                  <li>• Access your saved agents instantly</li>
-                  <li>• Continue from where you left off</li>
-                </ul>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300">
+                  <Bot className="h-5 w-5" />
+                </div>
+                <p className="text-base font-semibold text-white">AI builder</p>
+                <p className="mt-2 text-sm text-slate-300">Manage workflows and agent logic</p>
               </div>
-              <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">
-                <p className="font-semibold text-slate-100">Need help?</p>
-                <ul className="mt-4 space-y-3 text-sm text-slate-400">
-                  <li>• Use Google to skip typing credentials</li>
-                  <li>• Check your email verification status</li>
-                  <li>• Secure login for your workspace</li>
-                </ul>
+
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
+                  <Zap className="h-5 w-5" />
+                </div>
+                <p className="text-base font-semibold text-white">Realtime execution</p>
+                <p className="mt-2 text-sm text-slate-300">Track every node as it runs</p>
               </div>
+            </div>
+
+            <div className="mt-8 flex items-center gap-2 text-sm text-slate-300">
+              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+              Secure and encrypted authentication experience
             </div>
           </div>
 
-          <Card className="overflow-hidden rounded-[2rem] auth-card shadow-none">
-            <CardHeader className="bg-slate-900/90 px-8 py-7">
-              <CardTitle className="text-3xl font-semibold">Sign in</CardTitle>
-              <CardDescription className="text-slate-400">
-                Secure login with Google or email credentials.
+          <Card className="border-0 bg-slate-900/90 shadow-none">
+            <CardHeader className="px-6 pb-4 pt-7 sm:px-8">
+              <CardTitle className="text-3xl font-bold text-white">Sign in</CardTitle>
+              <CardDescription className="mt-2 text-slate-400">
+                Use your email or Google account to continue.
               </CardDescription>
             </CardHeader>
-            <CardContent className="px-8 py-8 sm:px-10 sm:py-10">
+            <CardContent className="px-6 pb-8 sm:px-8">
               <div className="space-y-6">
                 <Button
                   style={{
@@ -301,7 +311,7 @@ export default function LoginPage() {
                     color: '#111827',
                     borderColor: '#e5e7eb',
                   }}
-                  className="w-full flex items-center justify-center gap-3 rounded-2xl border px-5 py-4 text-sm font-semibold shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl border px-5 py-4 text-sm font-semibold shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={handleGoogleSignIn}
                   type="button"
                   disabled={googleLoading || authLoading || !isMounted}
@@ -326,8 +336,8 @@ export default function LoginPage() {
                   <div className="absolute inset-x-0 top-1/2 flex items-center">
                     <span className="mx-auto h-px w-full max-w-xs bg-slate-700" />
                   </div>
-                  <div className="relative z-10 mx-auto w-fit rounded-full bg-slate-950 px-4 text-xs uppercase tracking-[0.24em] text-slate-500">
-                    Or sign in with email
+                  <div className="relative z-10 mx-auto w-fit rounded-full bg-slate-900 px-3 text-[10px] font-medium uppercase tracking-[0.25em] text-slate-400">
+                    Or continue with email
                   </div>
                 </div>
 
@@ -337,16 +347,18 @@ export default function LoginPage() {
                   aria-describedby={formError ? errorElementId : undefined}
                 >
                   {isAuthInitializing ? (
-                    <div className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+                    <div className="rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm text-slate-300">
                       Checking your login state. If you are already signed in, you will be
-                      redirected shortly.
+                      redirected.
                     </div>
                   ) : null}
+
                   <LoginProtectionPanel
                     cooldownMessage={cooldownMessage}
                     failedAttempts={failedAttempts}
                     cooldownSeconds={cooldownSeconds}
                   />
+
                   {formError ? (
                     <div
                       id={errorElementId}
@@ -358,8 +370,10 @@ export default function LoginPage() {
                     </div>
                   ) : null}
 
-                  <div className="space-y-3">
-                    <Label htmlFor="email">Email address</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-slate-200">
+                      Email address
+                    </Label>
                     <Input
                       id="email"
                       name="email"
@@ -374,7 +388,7 @@ export default function LoginPage() {
                         fieldErrors.email ? 'email-error' : formError ? errorElementId : undefined
                       }
                       className={cn(
-                        'bg-slate-950/95 text-white',
+                        'border-slate-700 bg-slate-950/90 text-white placeholder:text-slate-500',
                         fieldErrors.email &&
                           'border-red-500/70 focus:border-red-400 focus:ring-red-400'
                       )}
@@ -382,28 +396,16 @@ export default function LoginPage() {
                       disabled={loading || authLoading || !isMounted || isCoolingDown}
                     />
                     {fieldErrors.email ? (
-                      <p id="email-error" className="mt-2 text-sm text-red-300">
+                      <p id="email-error" className="text-sm text-red-300">
                         {fieldErrors.email}
                       </p>
                     ) : null}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="remember-me"
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={e => setRememberMe(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400"
-                      disabled={loading || authLoading || !isMounted || isCoolingDown}
-                    />
-                    <label htmlFor="remember-me" className="text-sm text-slate-300">
-                      Remember me on this device
-                    </label>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label htmlFor="password">Password</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-slate-200">
+                      Password
+                    </Label>
                     <div className="relative">
                       <Input
                         id="password"
@@ -423,25 +425,20 @@ export default function LoginPage() {
                               : undefined
                         }
                         className={cn(
-                          'bg-slate-950/95 text-white pr-12',
+                          'border-slate-700 bg-slate-950/90 pr-12 text-white placeholder:text-slate-500',
                           fieldErrors.password &&
                             'border-red-500/70 focus:border-red-400 focus:ring-red-400'
                         )}
                         required
                         disabled={loading || authLoading || !isMounted || isCoolingDown}
                       />
-                      {fieldErrors.password ? (
-                        <p id="password-error" className="mt-2 text-sm text-red-300">
-                          {fieldErrors.password}
-                        </p>
-                      ) : null}
                       <button
                         type="button"
                         onClick={() => setShowPassword(prev => !prev)}
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                         aria-pressed={showPassword}
                         disabled={loading || authLoading || !isMounted || isCoolingDown}
-                        className="absolute inset-y-0 right-3 flex items-center justify-center rounded-full p-2 text-slate-300 transition hover:bg-slate-800/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950"
+                        className="absolute inset-y-0 right-3 flex items-center justify-center rounded-full p-2 text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
                       >
                         {showPassword ? (
                           <EyeOff className="h-5 w-5" />
@@ -450,6 +447,35 @@ export default function LoginPage() {
                         )}
                       </button>
                     </div>
+                    {fieldErrors.password ? (
+                      <p id="password-error" className="text-sm text-red-300">
+                        {fieldErrors.password}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <label
+                      htmlFor="remember-me"
+                      className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
+                    >
+                      <input
+                        id="remember-me"
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={e => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400"
+                        disabled={loading || authLoading || !isMounted || isCoolingDown}
+                      />
+                      Remember me
+                    </label>
+
+                    <Link
+                      href="/forgot-password"
+                      className="text-sm font-medium text-cyan-300 transition hover:text-cyan-200"
+                    >
+                      Forgot password?
+                    </Link>
                   </div>
 
                   <Button
@@ -467,26 +493,21 @@ export default function LoginPage() {
                         Signing in...
                       </span>
                     ) : (
-                      'Sign in'
+                      <span className="inline-flex items-center gap-2">
+                        Continue <ArrowRight className="h-4 w-4" />
+                      </span>
                     )}
                   </Button>
                 </form>
 
-                <div className="space-y-3 text-center text-sm text-slate-400">
-                  <p>
-                    Don&apos;t have an account?{' '}
-                    <Link href="/signup" className="font-medium text-cyan-300 hover:text-cyan-200">
-                      Sign up
-                    </Link>
-                  </p>
-                  <p>
-                    <Link
-                      href="/forgot-password"
-                      className="font-medium text-cyan-300 hover:text-cyan-200"
-                    >
-                      Forgot password?
-                    </Link>
-                  </p>
+                <div className="text-center text-sm text-slate-400">
+                  Don&apos;t have an account?{' '}
+                  <Link
+                    href="/signup"
+                    className="font-medium text-cyan-300 transition hover:text-cyan-200"
+                  >
+                    Sign up
+                  </Link>
                 </div>
               </div>
             </CardContent>

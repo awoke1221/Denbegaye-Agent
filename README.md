@@ -1,8 +1,66 @@
-# Denbegnaye - AI-Powered Digital Agency Toolkit
+# Denbegaye Agent — Multi-Strategy AI Agent Orchestration Platform
 
-Denbegnaye is a professional AI-powered digital Agency toolkit designed for creators and businesses owners. which Automates the degital ai agent creations and workflows with an intuitive visual builder.
+> A production-architected platform for building, executing, and monitoring autonomous AI agents — supporting multiple reasoning strategies (ReAct, Plan-and-Execute, Reflexion, LangGraph, and custom workflow DAGs) through a visual builder backed by a distributed, queue-based execution engine.
 
-## Architecture Overview
+🎥 **[Demo Video](#)** · 🔗 **[Live Demo](#)** · 📐 **[Architecture Diagram](#architecture)**
+
+---
+
+## For Recruiters & Technical Reviewers
+
+This project demonstrates production-grade agentic AI infrastructure, not a wrapper around a single LLM call. Highlights:
+
+- **Multi-strategy agent execution** — a single visual builder supports 5 selectable execution paradigms (`workflow`, `langgraph`, `react`, `plan-execute`, `reflexion`), letting users choose the right reasoning pattern per use case.
+- **Distributed, queue-based execution engine** — Redis/BullMQ-backed worker service, decoupled from the API layer, supporting horizontal scaling via `SERVICE_ROLE=api|worker|all`.
+- **Real-time execution observability** — live per-node execution status, structured logs, and Socket.IO-based status streaming from worker to browser.
+- **Credential vault** — centralized, per-user API key/token management across multiple AI providers (OpenAI, Gemini, DeepSeek) and third-party services (Gmail, Google Sheets).
+- **Data flow between agent steps** — variable resolution system that lets users bind outputs from upstream nodes into downstream node configs (a lightweight equivalent to LangGraph's state passing).
+- **Graph validation before execution** — Zod-based DAG validation to catch malformed workflows before they reach the execution engine.
+- **Self-audited scalability** — see the [Scalability & Roadmap](#scalability--roadmap) section below for an honest breakdown of current capacity and what's needed for enterprise scale.
+
+**Two-service architecture:**
+| Service | Role | Stack |
+|---|---|---|
+| `Denbegaye Agent` | Visual builder, auth, dashboard, API proxy | Next.js 16, React 18, TypeScript, Supabase, Zustand, React Flow, Socket.IO |
+| `Denbegaye Agent Workers` | Distributed execution engine | Node.js, Express, Redis, BullMQ, Zod, OpenTelemetry, Socket.IO |
+
+---
+
+## How the Repositories Work Together
+
+The two repositories are designed as complementary services in a single agent orchestration platform.
+
+- `Denbegaye Agent` provides the visual workflow builder, user authentication, credential management, and API proxy endpoints.
+- `Denbegaye Agent Workers` provides the execution engine that consumes queued jobs, runs DAG-based workflows, and persists audit logs.
+- Execution workflow:
+  1. User builds a workflow in the browser and selects an execution strategy.
+  2. Frontend validates the graph locally and submits the payload to `/api/agent-run`.
+  3. API proxy enqueues the job into Redis/BullMQ and returns an execution ID.
+  4. Worker service claims the job, executes nodes, and emits real-time status updates.
+  5. The UI receives progress events and displays final execution results.
+
+This split allows independent scaling: the UI and auth layers can run separately from the heavy agent execution workers.
+
+## Deployment Checklist
+
+- ✅ Confirm environment variables for both services (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `REDIS_URL`, `ENCRYPTION_KEY`)
+- ✅ Deploy `Denbegaye Agent` frontend with Next.js using Vercel, Netlify, or similar hosting
+- ✅ Deploy `Denbegaye Agent Workers` on a separate Node.js host or container platform
+- ✅ Configure Redis and BullMQ for shared queueing across worker instances
+- ✅ Enable HTTPS and secure token storage for credential management
+- ✅ Set up observability: logs, metrics, and real-time Socket.IO monitoring
+- ✅ Validate execution flow end to end with sample workflows before broad usage
+
+## Testing Checklist
+
+- ✅ Run unit tests for both repos with `npm test`
+- ✅ Run end-to-end workflow execution tests through the UI and worker pipeline
+- ✅ Validate real-time Socket.IO updates during execution
+- ✅ Confirm retry and failure handling for worker jobs
+- ✅ Verify audit logs are persisted to Supabase
+- ✅ Test with multiple concurrent workflow executions
+
+## Architecture
 
 ```mermaid
 graph TB
@@ -26,8 +84,13 @@ The application follows a modular architecture with clear separation of concerns
 ## 🚀 Features
 
 - **AI Agent Builder**: Create intelligent multi-step workflows with a drag-and-drop interface
+- **Multi-strategy execution**: Supports workflow, LangGraph, ReAct, Plan-Execute, and Reflexion modes
+- **Distributed execution engine**: Worker service processes jobs asynchronously through Redis/BullMQ
+- **Real-time monitoring**: Socket.IO streams node-level execution updates back to the UI
+- **Credential vault**: Central storage for user API keys and service tokens
+- **Graph validation**: Zod-based validation to catch broken workflows before execution
 
-## � API Documentation
+## 🔗 API Documentation
 
 The application provides RESTful API endpoints for all major features. All endpoints require authentication via Supabase Auth.
 

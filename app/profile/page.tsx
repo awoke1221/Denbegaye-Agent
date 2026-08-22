@@ -21,9 +21,11 @@ import {
   Zap,
   Database,
   Bot,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 import { LoadingState } from '@/components/loading-state';
-import { getUserUsage, getUserLimits } from '@/lib/rateLimiting';
+import { getUserUsage } from '@/lib/rateLimiting';
 import { supabase } from '@/lib/supabaseClient';
 
 interface Subscription {
@@ -54,7 +56,6 @@ export default function ProfilePage() {
       if (!user) return;
 
       try {
-        // Fetch subscription
         const { data: subData, error: subError } = await supabase
           .from('user_subscriptions')
           .select('pricing_plans!inner(name, tier), status, billing_cycle, current_period_end')
@@ -71,7 +72,6 @@ export default function ProfilePage() {
             current_period_end: subData.current_period_end,
           });
         } else {
-          // Default to free plan
           setSubscription({
             plan_name: 'Free',
             plan_tier: 'free',
@@ -81,7 +81,6 @@ export default function ProfilePage() {
           });
         }
 
-        // Fetch usage statistics
         const usage = await getUserUsage(user.id);
         setUsageStats(usage);
       } catch (error) {
@@ -113,252 +112,290 @@ export default function ProfilePage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-[#020617] text-white p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Profile</h1>
+      <div className="min-h-screen bg-[#020817] text-white">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">
+                Account overview
+              </p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">
+                Profile
+              </h1>
+            </div>
+
             <Button
               onClick={signOut}
               variant="outline"
-              className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+              className="border-red-500/40 bg-red-500/5 text-red-200 hover:bg-red-500 hover:text-white"
             >
               Sign Out
             </Button>
           </div>
 
-          {/* Profile Card */}
-          <Card className="bg-[#0f172a] border-white/10">
-            <CardHeader>
-              <div className="flex items-center space-x-4">
-                <Avatar className="w-20 h-20">
-                  {(() => {
-                    const src =
-                      typeof user.user_metadata?.avatar_url === 'string'
-                        ? user.user_metadata.avatar_url
-                        : typeof user.user_metadata?.picture === 'string'
-                          ? user.user_metadata.picture
-                          : typeof user.photoURL === 'string'
-                            ? user.photoURL
-                            : undefined;
+          <div className="space-y-6">
+            <Card className="overflow-hidden border border-white/10 bg-slate-950/70 shadow-[0_30px_80px_rgba(15,23,42,0.8)]">
+              <div className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.12),transparent_22%)] p-6 sm:p-8">
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20 border border-white/10 bg-slate-900 shadow-lg shadow-cyan-500/10">
+                      {(() => {
+                        const src =
+                          typeof user.user_metadata?.avatar_url === 'string'
+                            ? user.user_metadata.avatar_url
+                            : typeof user.user_metadata?.picture === 'string'
+                              ? user.user_metadata.picture
+                              : typeof user.photoURL === 'string'
+                                ? user.photoURL
+                                : undefined;
 
-                    return <AvatarImage src={src} alt={displayName || 'User avatar'} />;
-                  })()}
-                  <AvatarFallback className="text-xl">{avatarInitials}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle className="text-2xl">{displayName}</CardTitle>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-400">
-                      <Shield className="w-3 h-3 mr-1" />
-                      Verified User
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Account Information */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <User className="w-5 h-5 mr-2" />
-                  Account Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm text-gray-400">Email Address</label>
-                    <div className="flex items-center space-x-2">
-                      <Mail className="w-4 h-4 text-gray-400" />
-                      <span>{user.email}</span>
-                      {user.email_confirmed_at && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-green-500/20 text-green-400 text-xs"
-                        >
-                          Verified
+                        return <AvatarImage src={src} alt={displayName || 'User avatar'} />;
+                      })()}
+                      <AvatarFallback className="bg-gradient-to-br from-cyan-500 to-indigo-500 text-lg font-bold text-white">
+                        {avatarInitials}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-white sm:text-3xl">
+                        {displayName}
+                      </CardTitle>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Badge className="border border-cyan-400/20 bg-cyan-500/10 text-cyan-200">
+                          <Shield className="mr-1 h-3 w-3" />
+                          Verified User
                         </Badge>
-                      )}
+                        <Badge className="border border-violet-400/20 bg-violet-500/10 text-violet-200">
+                          <Sparkles className="mr-1 h-3 w-3" />
+                          Pro workspace
+                        </Badge>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm text-gray-400">User ID</label>
-                    <span className="font-mono text-sm">{user.id}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm text-gray-400">Account Created</label>
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span>
-                        {user.created_at
-                          ? new Date(user.created_at).toLocaleDateString()
-                          : 'Unknown'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm text-gray-400">Last Sign In</label>
-                    <span>
-                      {user.last_sign_in_at
-                        ? new Date(user.last_sign_in_at).toLocaleDateString()
-                        : 'Unknown'}
-                    </span>
-                  </div>
+
+                  <Button
+                    onClick={() => router.push('/agent-builder')}
+                    className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_16px_40px_rgba(34,211,238,0.35)]"
+                  >
+                    Go to Builder
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
               </div>
 
-              <Separator className="bg-white/10" />
+              <CardContent className="space-y-8 p-6 sm:p-8">
+                <div>
+                  <h3 className="mb-4 flex items-center text-lg font-semibold text-white">
+                    <User className="mr-2 h-5 w-5 text-cyan-300" />
+                    Account Information
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                        Email address
+                      </label>
+                      <div className="mt-2 flex items-center gap-2 text-slate-100">
+                        <Mail className="h-4 w-4 text-slate-400" />
+                        <span>{user.email}</span>
+                        {user.email_confirmed_at && (
+                          <Badge className="ml-auto border border-emerald-400/20 bg-emerald-500/10 text-emerald-200">
+                            Verified
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
 
-              {/* Subscription & Billing */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  Subscription & Billing
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm text-gray-400">Current Plan</label>
-                    <div className="flex items-center space-x-2">
-                      <Badge
-                        className={`${
-                          subscription?.plan_tier === 'enterprise'
-                            ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-                            : subscription?.plan_tier === 'pro'
-                              ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                              : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                        }`}
-                      >
-                        {subscription?.plan_name || 'Loading...'}
-                      </Badge>
-                      <span className="text-sm text-gray-400 capitalize">
-                        {subscription?.billing_cycle}
-                      </span>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                        User ID
+                      </label>
+                      <div className="mt-2 font-mono text-sm text-slate-200">{user.id}</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                        Account created
+                      </label>
+                      <div className="mt-2 flex items-center gap-2 text-slate-200">
+                        <Calendar className="h-4 w-4 text-slate-400" />
+                        <span>
+                          {user.created_at
+                            ? new Date(user.created_at).toLocaleDateString()
+                            : 'Unknown'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                        Last sign in
+                      </label>
+                      <div className="mt-2 text-slate-200">
+                        {user.last_sign_in_at
+                          ? new Date(user.last_sign_in_at).toLocaleDateString()
+                          : 'Unknown'}
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm text-gray-400">Next Billing Date</label>
-                    <span>
-                      {subscription?.current_period_end
-                        ? new Date(subscription.current_period_end).toLocaleDateString()
-                        : 'N/A'}
+                </div>
+
+                <Separator className="bg-white/10" />
+
+                <div>
+                  <h3 className="mb-4 flex items-center text-lg font-semibold text-white">
+                    <CreditCard className="mr-2 h-5 w-5 text-cyan-300" />
+                    Subscription & Billing
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                        Current plan
+                      </label>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge
+                          className={`${
+                            subscription?.plan_tier === 'enterprise'
+                              ? 'border border-violet-400/20 bg-violet-500/10 text-violet-200'
+                              : subscription?.plan_tier === 'pro'
+                                ? 'border border-cyan-400/20 bg-cyan-500/10 text-cyan-200'
+                                : 'border border-slate-400/20 bg-slate-500/10 text-slate-300'
+                          }`}
+                        >
+                          {subscription?.plan_name || 'Loading...'}
+                        </Badge>
+                        <span className="text-sm capitalize text-slate-300">
+                          {subscription?.billing_cycle}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                        Next billing date
+                      </label>
+                      <div className="mt-2 text-slate-200">
+                        {subscription?.current_period_end
+                          ? new Date(subscription.current_period_end).toLocaleDateString()
+                          : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push('/pricing')}
+                      className="border-cyan-500/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500 hover:text-white"
+                    >
+                      <TrendingUp className="mr-2 h-4 w-4" />
+                      Manage Subscription
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator className="bg-white/10" />
+
+                <div>
+                  <h3 className="mb-4 flex items-center text-lg font-semibold text-white">
+                    <TrendingUp className="mr-2 h-5 w-5 text-cyan-300" />
+                    Usage This Month
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-slate-200">
+                          <Bot className="h-4 w-4 text-cyan-300" />
+                          <span>AI Agents</span>
+                        </div>
+                        <span className="text-sm text-slate-300">
+                          {usageStats.agents?.current || 0} / {usageStats.agents?.limit || 0}
+                        </span>
+                      </div>
+                      <Progress value={usageStats.agents?.percentage || 0} className="h-2" />
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-slate-200">
+                          <Zap className="h-4 w-4 text-amber-300" />
+                          <span>Executions</span>
+                        </div>
+                        <span className="text-sm text-slate-300">
+                          {usageStats.executions?.current || 0} /{' '}
+                          {usageStats.executions?.limit || 0}
+                        </span>
+                      </div>
+                      <Progress value={usageStats.executions?.percentage || 0} className="h-2" />
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-slate-200">
+                          <TrendingUp className="h-4 w-4 text-emerald-300" />
+                          <span>API Calls</span>
+                        </div>
+                        <span className="text-sm text-slate-300">
+                          {usageStats.api_calls?.current || 0} / {usageStats.api_calls?.limit || 0}
+                        </span>
+                      </div>
+                      <Progress value={usageStats.api_calls?.percentage || 0} className="h-2" />
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-slate-200">
+                          <Database className="h-4 w-4 text-violet-300" />
+                          <span>Storage</span>
+                        </div>
+                        <span className="text-sm text-slate-300">
+                          {usageStats.storage_mb?.current || 0}MB /{' '}
+                          {usageStats.storage_mb?.limit || 0}MB
+                        </span>
+                      </div>
+                      <Progress value={usageStats.storage_mb?.percentage || 0} className="h-2" />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator className="bg-white/10" />
+
+                <div>
+                  <h3 className="mb-4 text-lg font-semibold text-white">Authentication</h3>
+                  <div className="flex items-center gap-2">
+                    <Badge className="border border-cyan-400/20 bg-cyan-500/10 text-cyan-200">
+                      {user.app_metadata?.provider === 'google'
+                        ? 'Google'
+                        : user.app_metadata?.provider === 'github'
+                          ? 'GitHub'
+                          : 'Email & Password'}
+                    </Badge>
+                    <span className="text-sm text-slate-300">
+                      {user.app_metadata?.provider
+                        ? `Signed in with ${user.app_metadata.provider}`
+                        : 'Signed in with email and password'}
                     </span>
                   </div>
                 </div>
-                <div className="mt-4">
+
+                <div className="flex flex-wrap gap-3 pt-2">
                   <Button
                     variant="outline"
-                    onClick={() => router.push('/pricing')}
-                    className="border-cyan-500 text-cyan-500 hover:bg-cyan-500 hover:text-white"
+                    onClick={() => router.push('/agent-builder')}
+                    className="border-white/10 bg-white/5 text-slate-100 hover:bg-white/10"
                   >
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Manage Subscription
-                  </Button>
-                </div>
-              </div>
-
-              <Separator className="bg-white/10" />
-
-              {/* Usage Statistics */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2" />
-                  Usage This Month
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Agents */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Bot className="w-4 h-4 text-blue-400" />
-                        <label className="text-sm text-gray-400">AI Agents</label>
-                      </div>
-                      <span className="text-sm">
-                        {usageStats.agents?.current || 0} / {usageStats.agents?.limit || 0}
-                      </span>
-                    </div>
-                    <Progress value={usageStats.agents?.percentage || 0} className="h-2" />
-                  </div>
-
-                  {/* Executions */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Zap className="w-4 h-4 text-yellow-400" />
-                        <label className="text-sm text-gray-400">Executions</label>
-                      </div>
-                      <span className="text-sm">
-                        {usageStats.executions?.current || 0} / {usageStats.executions?.limit || 0}
-                      </span>
-                    </div>
-                    <Progress value={usageStats.executions?.percentage || 0} className="h-2" />
-                  </div>
-
-                  {/* API Calls */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <TrendingUp className="w-4 h-4 text-green-400" />
-                        <label className="text-sm text-gray-400">API Calls</label>
-                      </div>
-                      <span className="text-sm">
-                        {usageStats.api_calls?.current || 0} / {usageStats.api_calls?.limit || 0}
-                      </span>
-                    </div>
-                    <Progress value={usageStats.api_calls?.percentage || 0} className="h-2" />
-                  </div>
-
-                  {/* Storage */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Database className="w-4 h-4 text-purple-400" />
-                        <label className="text-sm text-gray-400">Storage</label>
-                      </div>
-                      <span className="text-sm">
-                        {usageStats.storage_mb?.current || 0}MB /{' '}
-                        {usageStats.storage_mb?.limit || 0}
-                        MB
-                      </span>
-                    </div>
-                    <Progress value={usageStats.storage_mb?.percentage || 0} className="h-2" />
-                  </div>
-                </div>
-              </div>
-
-              <Separator className="bg-white/10" />
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Authentication</h3>
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="border-cyan-500 text-cyan-400">
-                    {user.app_metadata?.provider === 'google'
-                      ? 'Google'
-                      : user.app_metadata?.provider === 'github'
-                        ? 'GitHub'
-                        : 'Email & Password'}
-                  </Badge>
-                  <span className="text-sm text-gray-400">
-                    {user.app_metadata?.provider
-                      ? `Signed in with ${user.app_metadata.provider}`
-                      : 'Signed in with email and password'}
-                  </span>
-                </div>
-              </div>
-
-              <Separator className="bg-white/10" />
-
-              {/* Account Actions */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Account Actions</h3>
-                <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" onClick={() => router.push('/agent-builder')}>
                     Go to Agent Builder
                   </Button>
-                  <Button variant="outline" onClick={() => router.push('/')}>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/')}
+                    className="border-white/10 bg-white/5 text-slate-100 hover:bg-white/10"
+                  >
                     Back to Dashboard
                   </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </AuthGuard>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, supabaseAdmin } from '@/lib/supabaseClient';
 import { verifyPayment } from '@/lib/payments/paymentService';
 
 /**
@@ -27,13 +27,14 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Parse request body
-    const { transactionId, planId } = await request.json();
+    const { transactionId, planId, gateway } = await request.json();
 
     if (!transactionId || !planId) {
       return NextResponse.json({ error: 'Missing transactionId or planId' }, { status: 400 });
     }
 
-    const { data: pendingTransaction, error: pendingError } = await supabase
+    const paymentDatabase = supabaseAdmin || supabase;
+    const { data: pendingTransaction, error: pendingError } = await paymentDatabase
       .from('pending_transactions')
       .select('*')
       .or(`lakipay_transaction_id.eq.${transactionId},reference.eq.${transactionId}`)
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
       transactionId: actualTransactionId,
       userId: user.id,
       planId,
+      gateway: gateway || pendingTransaction?.metadata?.payment_gateway || 'lakipay',
     });
 
     if (!verificationResponse.success) {
