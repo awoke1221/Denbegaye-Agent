@@ -16,7 +16,12 @@ import {
   type Currency,
   type PaymentMethod,
 } from './lakipay';
-import { createPayPalOrder, capturePayPalOrder } from './paypal';
+import {
+  createPayPalSubscription,
+  getPayPalPlanId,
+  getPayPalSubscription,
+  cancelPayPalSubscription,
+} from './paypal';
 
 const paymentDatabase = supabaseAdmin || supabase;
 
@@ -115,23 +120,31 @@ export async function createPaymentSession(
       process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
 
     if (gateway === 'paypal') {
-      const paypalOrder = await createPayPalOrder({
-        amount,
-        currency: (request.currency || 'USD') as 'USD' | 'ETB',
-        description: `${plan.name} - ${request.billingCycle} subscription`,
-        userId: request.userId,
-        planId: request.planId,
-        billingCycle: request.billingCycle,
+      const paypalPlanId = getPayPalPlanId(request.billingCycle);
+      if (!paypalPlanId) {
+        return {
+          success: false,
+          error: {
+            code: 'PAYPAL_PLAN_NOT_CONFIGURED',
+            message: `PayPal ${request.billingCycle} billing plan is not configured.`,
+          },
+        };
+      }
+
+      const paypalSubscription = await createPayPalSubscription({
+        planId: paypalPlanId,
+        customId: `${request.userId}|${request.planId}|${request.billingCycle}`,
+        subscriberEmail: user.email,
         returnUrl: `${baseUrl}/payment-result?success=true&gateway=paypal&planId=${request.planId}`,
         cancelUrl: `${baseUrl}/payment-result?failed=true&gateway=paypal&planId=${request.planId}`,
       });
 
-      if (!paypalOrder.success || !paypalOrder.orderId) {
+      if (!paypalSubscription.success || !paypalSubscription.subscriptionId) {
         return {
           success: false,
-          error: paypalOrder.error || {
+          error: paypalSubscription.error || {
             code: 'PAYPAL_ERROR',
-            message: 'Unable to create PayPal checkout session.',
+            message: 'Unable to create recurring PayPal subscription.',
           },
         };
       }
@@ -139,15 +152,15 @@ export async function createPaymentSession(
       const { error: txError } = await paymentDatabase.from('pending_transactions').insert({
         user_id: request.userId,
         plan_id: request.planId,
-        lakipay_transaction_id: paypalOrder.orderId,
-        reference: paypalOrder.orderId,
+        lakipay_transaction_id: paypalSubscription.subscriptionId,
+        reference: paypalSubscription.subscriptionId,
         amount: amount,
         currency: (request.currency || 'USD').toUpperCase(),
         billing_cycle: request.billingCycle,
         status: 'pending',
         metadata: {
           payment_gateway: 'paypal',
-          paypal_order_id: paypalOrder.orderId,
+          paypal_subscription_id: paypalSubscription.subscriptionId,
           plan_name: plan.name,
           billing_cycle: request.billingCycle,
         },
@@ -161,8 +174,8 @@ export async function createPaymentSession(
       return {
         success: true,
         data: {
-          sessionUrl: paypalOrder.approvalUrl || '',
-          transactionId: paypalOrder.orderId,
+          sessionUrl: paypalSubscription.approvalUrl || '',
+          transactionId: paypalSubscription.subscriptionId,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
         },
       };
@@ -259,13 +272,13 @@ export async function verifyPayment(
     const gateway = request.gateway || pending?.metadata?.payment_gateway || 'lakipay';
 
     if (gateway === 'paypal') {
-      const capture = await capturePayPalOrder(request.transactionId);
+      const paypalSubscription = await getPayPalSubscription(request.transactionId);
 
-      if (!capture.success) {
+      if (paypalSubscription.status !== 'ACTIVE') {
         return {
           success: false,
           status: 'FAILED',
-          message: capture.error?.message || 'PayPal payment capture failed.',
+          message: `PayPal subscription status: ${paypalSubscription.status || 'UNKNOWN'}`,
         };
       }
 
@@ -281,20 +294,25 @@ export async function verifyPayment(
         now.getTime() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000
       );
 
-      const { error: subError } = await paymentDatabase.from('user_subscriptions').upsert(
-        {
-          user_id: request.userId,
-          plan_id: request.planId,
-          lakipay_transaction_id: request.transactionId,
-          status: 'active',
-          billing_cycle: billingCycle,
-          current_period_start: now.toISOString(),
-          current_period_end: periodEnd.toISOString(),
-          cancel_at_period_end: false,
-          updated_at: now.toISOString(),
-        },
-        { onConflict: 'user_id' }
-      );
+      const { data: subscription, error: subError } = await paymentDatabase
+        .from('user_subscriptions')
+        .upsert(
+          {
+            user_id: request.userId,
+            plan_id: request.planId,
+            lakipay_transaction_id: request.transactionId,
+            paypal_subscription_id: request.transactionId,
+            status: 'active',
+            billing_cycle: billingCycle,
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            cancel_at_period_end: false,
+            updated_at: now.toISOString(),
+          },
+          { onConflict: 'user_id' }
+        )
+        .select('id')
+        .single();
 
       if (subError) {
         console.error('Failed to create PayPal subscription:', subError);
@@ -319,15 +337,18 @@ export async function verifyPayment(
 
       const { error: paymentError } = await paymentDatabase.from('payment_history').insert({
         user_id: request.userId,
-        subscription_id: request.planId,
+        subscription_id: subscription?.id,
         lakipay_transaction_id: request.transactionId,
-        amount: Number(capture.amount || 0),
-        currency: (capture.currency || 'USD').toLowerCase(),
+        amount:
+          billingCycle === 'yearly'
+            ? Number(plan?.price_yearly || 0)
+            : Number(plan?.price_monthly || 0),
+        currency: 'usd',
         status: 'succeeded',
         description: `PayPal subscription payment for ${plan?.tier || 'plan'}`,
         metadata: {
           payment_gateway: 'paypal',
-          paypal_order_id: request.transactionId,
+          paypal_subscription_id: request.transactionId,
           plan_id: request.planId,
           billing_cycle: billingCycle,
         },
@@ -351,10 +372,13 @@ export async function verifyPayment(
           transactionId: request.transactionId,
           userId: request.userId,
           planId: request.planId,
-          amount: Number(capture.amount || 0),
-          currency: (capture.currency || 'USD') as Currency,
+          amount:
+            billingCycle === 'yearly'
+              ? Number(plan?.price_yearly || 0)
+              : Number(plan?.price_monthly || 0),
+          currency: 'USD',
           paymentMethod: 'ALL' as PaymentMethod,
-          completedAt: capture.capturedAt || now.toISOString(),
+          completedAt: now.toISOString(),
         },
       };
     }
@@ -389,20 +413,24 @@ export async function verifyPayment(
       now.getTime() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000
     );
 
-    const { error: subError } = await paymentDatabase.from('user_subscriptions').upsert(
-      {
-        user_id: request.userId,
-        plan_id: request.planId,
-        lakipay_transaction_id: request.transactionId,
-        status: 'active',
-        billing_cycle: billingCycle,
-        current_period_start: now.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        cancel_at_period_end: false,
-        updated_at: now.toISOString(),
-      },
-      { onConflict: 'user_id' }
-    );
+    const { data: subscription, error: subError } = await paymentDatabase
+      .from('user_subscriptions')
+      .upsert(
+        {
+          user_id: request.userId,
+          plan_id: request.planId,
+          lakipay_transaction_id: request.transactionId,
+          status: 'active',
+          billing_cycle: billingCycle,
+          current_period_start: now.toISOString(),
+          current_period_end: periodEnd.toISOString(),
+          cancel_at_period_end: false,
+          updated_at: now.toISOString(),
+        },
+        { onConflict: 'user_id' }
+      )
+      .select('id')
+      .single();
 
     if (subError) {
       console.error('Failed to create subscription:', subError);
@@ -427,7 +455,7 @@ export async function verifyPayment(
 
     const { error: paymentError } = await paymentDatabase.from('payment_history').insert({
       user_id: request.userId,
-      subscription_id: request.planId,
+      subscription_id: subscription?.id,
       lakipay_transaction_id: request.transactionId,
       amount: transaction.amount,
       currency: transaction.currency,
@@ -472,6 +500,38 @@ export async function verifyPayment(
       message: error instanceof Error ? error.message : 'Failed to verify payment',
     };
   }
+}
+
+export async function cancelSubscription(userId: string, reason = 'Canceled by customer') {
+  const { data: subscription, error: subscriptionError } = await paymentDatabase
+    .from('user_subscriptions')
+    .select('id, plan_id, paypal_subscription_id, status')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .maybeSingle();
+
+  if (subscriptionError) throw subscriptionError;
+  if (!subscription) throw new Error('No active subscription found.');
+  if (!subscription.paypal_subscription_id) {
+    throw new Error('This subscription cannot be canceled through PayPal.');
+  }
+
+  await cancelPayPalSubscription(subscription.paypal_subscription_id, reason);
+  const now = new Date().toISOString();
+
+  const { error: updateError } = await paymentDatabase
+    .from('user_subscriptions')
+    .update({ status: 'canceled', cancel_at_period_end: true, updated_at: now })
+    .eq('id', subscription.id);
+  if (updateError) throw updateError;
+
+  const { error: profileError } = await paymentDatabase
+    .from('profiles')
+    .update({ subscription_tier: 'free', updated_at: now })
+    .eq('id', userId);
+  if (profileError) throw profileError;
+
+  return { success: true, message: 'Recurring PayPal payments canceled.' };
 }
 
 /**
@@ -552,42 +612,5 @@ export async function getUserSubscription(userId: string) {
   } catch (error) {
     console.error('Error getting user subscription:', error);
     return null;
-  }
-}
-
-/**
- * Cancel subscription
- */
-export async function cancelSubscription(userId: string) {
-  try {
-    const { error } = await supabase
-      .from('user_subscriptions')
-      .update({
-        status: 'canceled',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId);
-
-    if (error) {
-      throw error;
-    }
-
-    // Update user tier back to free
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        subscription_tier: 'free',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
-
-    if (profileError) {
-      console.error('Failed to update profile:', profileError);
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Failed to cancel subscription:', error);
-    return false;
   }
 }

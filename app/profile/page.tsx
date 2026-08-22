@@ -50,6 +50,8 @@ export default function ProfilePage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [usageStats, setUsageStats] = useState<UsageStats>({});
   const [loadingData, setLoadingData] = useState(true);
+  const [canceling, setCanceling] = useState(false);
+  const [cancelMessage, setCancelMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSubscriptionData = async () => {
@@ -94,6 +96,39 @@ export default function ProfilePage() {
       fetchSubscriptionData();
     }
   }, [user]);
+
+  const handleCancelSubscription = async () => {
+    if (!user || !subscription || subscription.plan_tier === 'free') return;
+    if (!window.confirm('Cancel recurring PayPal payments for this subscription?')) return;
+
+    try {
+      setCanceling(true);
+      setCancelMessage(null);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error('Your session has expired. Please sign in again.');
+
+      const response = await fetch('/api/payments/cancel', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'Canceled by customer from profile' }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to cancel subscription.');
+
+      setSubscription({
+        ...subscription,
+        status: 'canceled',
+        plan_tier: 'free',
+        plan_name: 'Free',
+      });
+      setCancelMessage('Recurring PayPal payments have been canceled.');
+    } catch (error) {
+      setCancelMessage(error instanceof Error ? error.message : 'Unable to cancel subscription.');
+    } finally {
+      setCanceling(false);
+    }
+  };
 
   if (loading) {
     return <LoadingState />;
@@ -282,14 +317,29 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="mt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => router.push('/pricing')}
-                      className="border-cyan-500/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500 hover:text-white"
-                    >
-                      <TrendingUp className="mr-2 h-4 w-4" />
-                      Manage Subscription
-                    </Button>
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => router.push('/pricing')}
+                        className="border-cyan-500/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500 hover:text-white"
+                      >
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        Manage Subscription
+                      </Button>
+                      {subscription?.plan_tier !== 'free' && subscription?.status === 'active' && (
+                        <Button
+                          variant="outline"
+                          onClick={handleCancelSubscription}
+                          disabled={canceling}
+                          className="border-red-500/40 bg-red-500/5 text-red-200 hover:bg-red-500 hover:text-white"
+                        >
+                          {canceling ? 'Canceling...' : 'Cancel recurring payments'}
+                        </Button>
+                      )}
+                    </div>
+                    {cancelMessage && (
+                      <p className="mt-3 text-sm text-slate-300">{cancelMessage}</p>
+                    )}
                   </div>
                 </div>
 

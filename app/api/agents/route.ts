@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { checkAgentCreationAllowed, incrementUsage } from '@/lib/rateLimiting';
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
@@ -78,6 +79,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const agentQuota = await checkAgentCreationAllowed(user.id);
+    if (!agentQuota.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Agent limit reached',
+          message: `Your plan allows ${agentQuota.limit} active AI agents.`,
+        },
+        { status: 429 }
+      );
+    }
+
     // Create agent in Supabase
     const { data, error } = await supabase
       .from('user_agents')
@@ -99,6 +111,8 @@ export async function POST(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await incrementUsage(user.id, 'agent_creations');
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {

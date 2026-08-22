@@ -222,6 +222,7 @@ CREATE TABLE IF NOT EXISTS public.user_subscriptions (
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     plan_id UUID REFERENCES public.pricing_plans(id),
     stripe_subscription_id TEXT UNIQUE,
+    paypal_subscription_id TEXT UNIQUE,
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'canceled', 'past_due', 'incomplete', 'trialing')),
     billing_cycle TEXT NOT NULL DEFAULT 'monthly' CHECK (billing_cycle IN ('monthly', 'yearly')),
     current_period_start TIMESTAMPTZ,

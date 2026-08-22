@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { checkExecutionAllowed, incrementUsage } from '@/lib/rateLimiting';
 import type { AgentExecution, DatabaseResponse, QueryOptions } from '@/types/database';
 
 /**
@@ -213,6 +214,17 @@ export async function POST(
       );
     }
 
+    const executionQuota = await checkExecutionAllowed(user.id);
+    if (!executionQuota.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Execution limit reached',
+          message: `Your plan allows ${executionQuota.limit} executions per billing period.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { input_data, idempotency_key } = body;
 
@@ -263,6 +275,8 @@ export async function POST(
         { status: 500 }
       );
     }
+
+    await incrementUsage(user.id, 'executions');
 
     // TODO: Send execution to backend worker queue for processing
     // This should trigger the backend server at port 3001 to process the execution

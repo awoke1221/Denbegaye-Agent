@@ -34,6 +34,21 @@ export interface PayPalCaptureResult {
   };
 }
 
+export interface PayPalSubscriptionInput {
+  planId: string;
+  customId: string;
+  subscriberEmail?: string;
+  returnUrl: string;
+  cancelUrl: string;
+}
+
+export interface PayPalSubscriptionResult {
+  success: boolean;
+  subscriptionId?: string;
+  approvalUrl?: string;
+  error?: { code: string; message: string };
+}
+
 const PAYPAL_API_BASE = process.env.PAYPAL_API_BASE_URL || 'https://api-m.sandbox.paypal.com';
 
 async function getAccessToken(): Promise<string> {
@@ -64,6 +79,96 @@ async function getAccessToken(): Promise<string> {
 
   const data = await response.json();
   return data.access_token;
+}
+
+export function getPayPalPlanId(billingCycle: 'monthly' | 'yearly'): string | null {
+  return billingCycle === 'yearly'
+    ? process.env.PAYPAL_PLAN_ID_YEARLY || null
+    : process.env.PAYPAL_PLAN_ID_MONTHLY || null;
+}
+
+export async function createPayPalSubscription(
+  input: PayPalSubscriptionInput
+): Promise<PayPalSubscriptionResult> {
+  try {
+    const accessToken = await getAccessToken();
+    const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({
+        plan_id: input.planId,
+        custom_id: input.customId,
+        subscriber: input.subscriberEmail ? { email_address: input.subscriberEmail } : undefined,
+        application_context: {
+          brand_name: 'Denbegnaye',
+          user_action: 'SUBSCRIBE_NOW',
+          return_url: input.returnUrl,
+          cancel_url: input.cancelUrl,
+          shipping_preference: 'NO_SHIPPING',
+        },
+      }),
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: {
+          code: payload?.name || 'PAYPAL_SUBSCRIPTION_ERROR',
+          message: payload?.message || 'Unable to create recurring PayPal subscription.',
+        },
+      };
+    }
+
+    return {
+      success: true,
+      subscriptionId: payload.id,
+      approvalUrl: payload.links?.find((link: { rel?: string }) => link.rel === 'approve')?.href,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: 'PAYPAL_SUBSCRIPTION_EXCEPTION',
+        message: error instanceof Error ? error.message : 'Failed to create PayPal subscription.',
+      },
+    };
+  }
+}
+
+export async function getPayPalSubscription(subscriptionId: string) {
+  const accessToken = await getAccessToken();
+  const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions/${subscriptionId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.message || 'Unable to retrieve PayPal subscription.');
+  }
+  return payload;
+}
+
+export async function cancelPayPalSubscription(subscriptionId: string, reason: string) {
+  const accessToken = await getAccessToken();
+  const response = await fetch(
+    `${PAYPAL_API_BASE}/v1/billing/subscriptions/${subscriptionId}/cancel`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ reason }),
+    }
+  );
+  if (!response.ok && response.status !== 204) {
+    const payload = await response.json();
+    throw new Error(payload?.message || 'Unable to cancel PayPal subscription.');
+  }
 }
 
 export async function createPayPalOrder(input: PayPalOrderInput): Promise<PayPalOrderResult> {
