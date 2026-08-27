@@ -10,6 +10,26 @@ import { supabase } from '@/lib/supabaseClient';
 import { AgentWorkflow, UserAgent } from '@/types/agent';
 import { AgentNodeData } from '@/stores/agentBuilderStore';
 
+const getExecutionErrorMessage = (error: unknown, errorStack?: string) => {
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error instanceof Error && error.message) return error.message;
+  if (error && typeof error === 'object') {
+    const errorObject = error as { message?: unknown; error?: unknown };
+    if (typeof errorObject.message === 'string' && errorObject.message.trim()) {
+      return errorObject.message;
+    }
+    if (typeof errorObject.error === 'string' && errorObject.error.trim()) {
+      return errorObject.error;
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return errorStack || 'Unknown error';
+    }
+  }
+  return errorStack || 'Unknown error';
+};
+
 type AutosaveArgs = {
   nodes: Node<AgentNodeData>[];
   edges: Edge[];
@@ -330,7 +350,13 @@ export function useAgentBuilderSocketExecution({
 
     socket.on(
       'node-completed',
-      (data: { executionId: string; nodeId: string; success: boolean; error?: string }) => {
+      (data: {
+        executionId: string;
+        nodeId: string;
+        success: boolean;
+        error?: unknown;
+        errorStack?: string;
+      }) => {
         console.log('[socket → agentBuilder] node-completed', data);
         setExecutionStatuses(prev => ({
           ...prev,
@@ -350,7 +376,9 @@ export function useAgentBuilderSocketExecution({
                   data: {
                     ...node.data,
                     executionState: data.success ? 'completed' : 'failed',
-                    executionError: data.success ? null : data.error || 'Unknown error',
+                    executionError: data.success
+                      ? null
+                      : getExecutionErrorMessage(data.error, data.errorStack),
                   },
                 }
               : node

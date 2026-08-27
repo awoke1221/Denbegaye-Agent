@@ -330,6 +330,17 @@ export const AdvancedAgentNode = memo((props: AdvancedAgentNodeProps) => {
             )}
           </div>
         )}
+
+        {data.executionState === 'failed' && data.executionError && (
+          <div
+            role="alert"
+            className="mt-3 max-h-20 overflow-y-auto rounded-md border border-red-400/40 bg-red-950/70 px-2 py-1.5 text-xs leading-snug text-red-100"
+            title={String(data.executionError)}
+          >
+            <span className="font-semibold text-red-300">Node error: </span>
+            {String(data.executionError)}
+          </div>
+        )}
       </div>
 
       {/* Expanded Content */}
