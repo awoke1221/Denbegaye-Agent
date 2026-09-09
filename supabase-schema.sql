@@ -554,7 +554,7 @@ CREATE POLICY "Authenticated users can access job queue" ON public.job_queue
     FOR ALL USING (auth.role() = 'authenticated');
 
 CREATE POLICY "All users can view pricing plans" ON public.pricing_plans
-    FOR SELECT USING (auth.role() = 'authenticated');
+    FOR SELECT USING (true);
 
 CREATE POLICY "Users can view own subscriptions" ON public.user_subscriptions
     FOR SELECT USING (auth.uid() = user_id);
@@ -854,7 +854,7 @@ CREATE POLICY "Authenticated users can access job queue" ON public.job_queue
     FOR ALL USING (auth.role() = 'authenticated');
 
 CREATE POLICY "All users can view pricing plans" ON public.pricing_plans
-    FOR SELECT USING (auth.role() = 'authenticated');
+    FOR SELECT USING (true);
 
 CREATE POLICY "Users can view own subscriptions" ON public.user_subscriptions
     FOR SELECT USING (auth.uid() = user_id);

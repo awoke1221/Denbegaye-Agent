@@ -10,6 +10,55 @@ import { SitePageShell } from '@/components/site-page-shell';
 import { Check, Star, Zap, Users, Database, Shield, ArrowRight, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
+const fallbackPlans: PricingPlan[] = [
+  {
+    id: 'free-plan-fallback',
+    name: 'Free',
+    tier: 'free',
+    description: 'Perfect for getting started with AI agents',
+    price_monthly: 0,
+    price_yearly: 0,
+    features: ['1 AI Agent', '100 Executions/month', 'Basic Templates', 'Community Support'],
+    limits: { agents: 1, executions: 100, api_calls: 1000, storage_mb: 100 },
+  },
+  {
+    id: 'pro-plan-fallback',
+    name: 'Pro',
+    tier: 'pro',
+    description: 'For professionals and small teams',
+    price_monthly: 29.99,
+    price_yearly: 299.99,
+    features: [
+      '5 AI Agents',
+      '5000 Executions/month',
+      'All Templates',
+      'Priority Support',
+      'Advanced Analytics',
+      'API Access',
+    ],
+    limits: { agents: 5, executions: 5000, api_calls: 50000, storage_mb: 5000 },
+  },
+  {
+    id: 'enterprise-plan-fallback',
+    name: 'Enterprise',
+    tier: 'enterprise',
+    description: 'For large organizations with advanced needs',
+    price_monthly: 99.99,
+    price_yearly: 999.99,
+    features: [
+      'Unlimited AI Agents',
+      'Unlimited Executions',
+      'Custom Templates',
+      'Dedicated Support',
+      'Advanced Analytics',
+      'API Access',
+      'Custom Integrations',
+      'SLA Guarantee',
+    ],
+    limits: { agents: -1, executions: -1, api_calls: -1, storage_mb: 50000 },
+  },
+];
+
 interface PricingPlan {
   id: string;
   name: string;
@@ -72,7 +121,12 @@ export default function PricingPage() {
           })) || [];
 
         if (!active) return;
-        setPlans(transformedPlans);
+
+        if (transformedPlans.length === 0) {
+          setPlans(fallbackPlans);
+        } else {
+          setPlans(transformedPlans);
+        }
 
         if (user) {
           const { data: subscriptionData, error: subscriptionError } = await supabase
@@ -93,7 +147,7 @@ export default function PricingPage() {
       } catch (error) {
         console.error('Error fetching pricing data:', error);
         if (active) {
-          setPlans([]);
+          setPlans(fallbackPlans);
           setUserSubscription(null);
         }
       } finally {
