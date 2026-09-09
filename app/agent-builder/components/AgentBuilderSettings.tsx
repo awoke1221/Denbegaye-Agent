@@ -30,29 +30,29 @@ export function AgentBuilderSettings({
   saveApiKeys,
 }: AgentBuilderSettingsProps) {
   return (
-    <div className="flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-700">
+    <div className="flex-1 p-8 overflow-y-auto bg-[var(--bg-page)] text-[var(--text-primary)]">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 dark:from-slate-100 dark:via-blue-100 dark:to-indigo-100 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
             System Settings
           </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+          <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto">
             Configure your agent builder preferences, API integrations, and system behavior
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl">
+          <Card className="border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[0_10px_22px_var(--shadow-soft)]">
             <CardHeader className="pb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-[var(--text-secondary)]" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                  <CardTitle className="text-xl font-bold text-[var(--text-primary)]">
                     API Keys
                   </CardTitle>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-[var(--text-secondary)]">
                     Configure your AI service API keys
                   </p>
                 </div>
@@ -61,8 +61,8 @@ export function AgentBuilderSettings({
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                  <Label className="text-sm font-medium text-[var(--text-primary)] flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-[var(--text-primary)] mr-2 opacity-70"></div>
                     OpenAI API Key
                   </Label>
                   <Input
@@ -75,8 +75,8 @@ export function AgentBuilderSettings({
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                  <Label className="text-sm font-medium text-[var(--text-primary)] flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-[var(--text-secondary)] mr-2 opacity-70"></div>
                     Google Gemini API Key
                   </Label>
                   <Input
@@ -89,8 +89,8 @@ export function AgentBuilderSettings({
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+                  <Label className="text-sm font-medium text-[var(--text-primary)] flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-[var(--text-tertiary)] mr-2 opacity-70"></div>
                     DeepSeek API Key
                   </Label>
                   <Input
@@ -103,8 +103,8 @@ export function AgentBuilderSettings({
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                  <Label className="text-sm font-medium text-[var(--text-primary)] flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-[var(--text-secondary)] mr-2 opacity-70"></div>
                     Gmail Username
                   </Label>
                   <Input
@@ -118,12 +118,12 @@ export function AgentBuilderSettings({
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-sm text-[var(--text-secondary)]">
                   Keys are stored locally and encrypted
                 </p>
                 <Button
                   onClick={saveApiKeys}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                  className="border border-[var(--border-default)] bg-[var(--bg-soft)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   Save Keys
@@ -132,17 +132,17 @@ export function AgentBuilderSettings({
             </CardContent>
           </Card>
 
-          <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl">
+          <Card className="border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[0_10px_22px_var(--shadow-soft)]">
             <CardHeader className="pb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
-                  <Settings className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                  <Settings className="w-5 h-5 text-[var(--text-secondary)]" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                  <CardTitle className="text-xl font-bold text-[var(--text-primary)]">
                     Builder Preferences
                   </CardTitle>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-[var(--text-secondary)]">
                     Customize your workflow building experience
                   </p>
                 </div>
@@ -152,10 +152,10 @@ export function AgentBuilderSettings({
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <Label className="text-sm font-medium text-[var(--text-primary)]">
                       Auto-save
                     </Label>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-[var(--text-secondary)]">
                       Automatically save your work every 30 seconds
                     </p>
                   </div>
@@ -164,10 +164,10 @@ export function AgentBuilderSettings({
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <Label className="text-sm font-medium text-[var(--text-primary)]">
                       Show node palette
                     </Label>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-[var(--text-secondary)]">
                       Display the node palette by default
                     </p>
                   </div>
@@ -176,10 +176,10 @@ export function AgentBuilderSettings({
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <Label className="text-sm font-medium text-[var(--text-primary)]">
                       Real-time execution
                     </Label>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-[var(--text-secondary)]">
                       Show live execution updates
                     </p>
                   </div>
@@ -188,10 +188,10 @@ export function AgentBuilderSettings({
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <Label className="text-sm font-medium text-[var(--text-primary)]">
                       Keyboard shortcuts
                     </Label>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-[var(--text-secondary)]">
                       Enable Ctrl+Z, Ctrl+Y, etc.
                     </p>
                   </div>
@@ -201,11 +201,11 @@ export function AgentBuilderSettings({
             </CardContent>
           </Card>
 
-          <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl">
+          <Card className="border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[0_10px_22px_var(--shadow-soft)]">
             <CardHeader className="pb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                  <Database className="w-5 h-5 text-[var(--text-secondary)]" />
                 </div>
                 <div>
                   <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">
@@ -258,11 +258,11 @@ export function AgentBuilderSettings({
             </CardContent>
           </Card>
 
-          <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl">
+          <Card className="border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[0_10px_22px_var(--shadow-soft)]">
             <CardHeader className="pb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-[var(--text-secondary)]" />
                 </div>
                 <div>
                   <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">
@@ -301,7 +301,7 @@ export function AgentBuilderSettings({
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Reset to Defaults
                 </Button>
-                <Button className="flex-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white">
+                <Button className="flex-1 border border-[var(--border-default)] bg-[var(--bg-soft)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
                   <Save className="w-4 h-4 mr-2" />
                   Save Settings
                 </Button>

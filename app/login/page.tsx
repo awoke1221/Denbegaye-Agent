@@ -247,25 +247,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#020817] text-slate-100">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.18),transparent_28%)]" />
-      <div className="pointer-events-none absolute left-8 top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-10 right-8 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden bg-[var(--bg-page)] text-[var(--text-primary)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(17,24,39,0.04),transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(17,24,39,0.03),transparent_28%)]" />
+      <div className="pointer-events-none absolute left-8 top-20 h-64 w-64 rounded-full bg-[rgba(17,24,39,0.04)] blur-3xl" />
+      <div className="pointer-events-none absolute bottom-10 right-8 h-72 w-72 rounded-full bg-[rgba(17,24,39,0.03)] blur-3xl" />
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10">
-        <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/75 shadow-[0_40px_120px_rgba(15,23,42,0.9)] backdrop-blur-xl lg:grid-cols-[1.15fr_0.95fr]">
-          <div className="flex flex-col justify-between bg-slate-950/80 px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
+        <div className="grid w-full overflow-hidden rounded-[2rem] border border-[var(--border-default)] bg-[rgba(255,255,255,0.8)] shadow-[0_40px_120px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:grid-cols-[1.15fr_0.95fr]">
+          <div className="flex flex-col justify-between bg-[rgba(255,255,255,0.7)] px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
                 <Sparkles className="h-3.5 w-3.5" />
                 Denbegnaye
               </div>
 
               <div className="space-y-5">
-                <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                <h1 className="text-4xl font-black tracking-tight text-[var(--text-primary)] sm:text-5xl">
                   Welcome back
                 </h1>
-                <p className="max-w-lg text-base leading-7 text-slate-300 sm:text-lg">
+                <p className="max-w-lg text-base leading-7 text-[var(--text-secondary)] sm:text-lg">
                   Sign in to continue building AI agents, automations, and workflows with a modern
                   execution engine designed for speed and clarity.
                 </p>
@@ -273,33 +273,41 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300">
+              <div className="rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.6)] p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--bg-soft)] text-[var(--text-primary)]">
                   <Bot className="h-5 w-5" />
                 </div>
-                <p className="text-base font-semibold text-white">AI builder</p>
-                <p className="mt-2 text-sm text-slate-300">Manage workflows and agent logic</p>
+                <p className="text-base font-semibold text-[var(--text-primary)]">AI builder</p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                  Manage workflows and agent logic
+                </p>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
+              <div className="rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.6)] p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--bg-soft)] text-[var(--text-primary)]">
                   <Zap className="h-5 w-5" />
                 </div>
-                <p className="text-base font-semibold text-white">Realtime execution</p>
-                <p className="mt-2 text-sm text-slate-300">Track every node as it runs</p>
+                <p className="text-base font-semibold text-[var(--text-primary)]">
+                  Realtime execution
+                </p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                  Track every node as it runs
+                </p>
               </div>
             </div>
 
-            <div className="mt-8 flex items-center gap-2 text-sm text-slate-300">
-              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            <div className="mt-8 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+              <ShieldCheck className="h-4 w-4 text-[var(--text-primary)]" />
               Secure and encrypted authentication experience
             </div>
           </div>
 
-          <Card className="border-0 bg-slate-900/90 shadow-none">
+          <Card className="border-0 bg-[rgba(255,255,255,0.9)] shadow-none">
             <CardHeader className="px-6 pb-4 pt-7 sm:px-8">
-              <CardTitle className="text-3xl font-bold text-white">Sign in</CardTitle>
-              <CardDescription className="mt-2 text-slate-400">
+              <CardTitle className="text-3xl font-bold text-[var(--text-primary)]">
+                Sign in
+              </CardTitle>
+              <CardDescription className="mt-2 text-[var(--text-secondary)]">
                 Use your email or Google account to continue.
               </CardDescription>
             </CardHeader>
@@ -334,9 +342,9 @@ export default function LoginPage() {
 
                 <div className="relative">
                   <div className="absolute inset-x-0 top-1/2 flex items-center">
-                    <span className="mx-auto h-px w-full max-w-xs bg-slate-700" />
+                    <span className="mx-auto h-px w-full max-w-xs bg-[var(--border-default)]" />
                   </div>
-                  <div className="relative z-10 mx-auto w-fit rounded-full bg-slate-900 px-3 text-[10px] font-medium uppercase tracking-[0.25em] text-slate-400">
+                  <div className="relative z-10 mx-auto w-fit rounded-full bg-[var(--bg-subtle)] px-3 text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-tertiary)]">
                     Or continue with email
                   </div>
                 </div>
@@ -347,7 +355,7 @@ export default function LoginPage() {
                   aria-describedby={formError ? errorElementId : undefined}
                 >
                   {isAuthInitializing ? (
-                    <div className="rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm text-slate-300">
+                    <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-subtle)] px-4 py-3 text-sm text-[var(--text-secondary)]">
                       Checking your login state. If you are already signed in, you will be
                       redirected.
                     </div>
@@ -371,7 +379,7 @@ export default function LoginPage() {
                   ) : null}
 
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-slate-200">
+                    <Label htmlFor="email" className="text-[var(--text-primary)]">
                       Email address
                     </Label>
                     <Input
@@ -388,7 +396,7 @@ export default function LoginPage() {
                         fieldErrors.email ? 'email-error' : formError ? errorElementId : undefined
                       }
                       className={cn(
-                        'border-slate-700 bg-slate-950/90 text-white placeholder:text-slate-500',
+                        'border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]',
                         fieldErrors.email &&
                           'border-red-500/70 focus:border-red-400 focus:ring-red-400'
                       )}
@@ -396,14 +404,14 @@ export default function LoginPage() {
                       disabled={loading || authLoading || !isMounted || isCoolingDown}
                     />
                     {fieldErrors.email ? (
-                      <p id="email-error" className="text-sm text-red-300">
+                      <p id="email-error" className="text-sm text-red-600">
                         {fieldErrors.email}
                       </p>
                     ) : null}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-slate-200">
+                    <Label htmlFor="password" className="text-[var(--text-primary)]">
                       Password
                     </Label>
                     <div className="relative">
@@ -425,7 +433,7 @@ export default function LoginPage() {
                               : undefined
                         }
                         className={cn(
-                          'border-slate-700 bg-slate-950/90 pr-12 text-white placeholder:text-slate-500',
+                          'border-[var(--border-default)] bg-[var(--bg-subtle)] pr-12 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]',
                           fieldErrors.password &&
                             'border-red-500/70 focus:border-red-400 focus:ring-red-400'
                         )}
@@ -438,7 +446,7 @@ export default function LoginPage() {
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                         aria-pressed={showPassword}
                         disabled={loading || authLoading || !isMounted || isCoolingDown}
-                        className="absolute inset-y-0 right-3 flex items-center justify-center rounded-full p-2 text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+                        className="absolute inset-y-0 right-3 flex items-center justify-center rounded-full p-2 text-[var(--text-secondary)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                       >
                         {showPassword ? (
                           <EyeOff className="h-5 w-5" />
@@ -448,7 +456,7 @@ export default function LoginPage() {
                       </button>
                     </div>
                     {fieldErrors.password ? (
-                      <p id="password-error" className="text-sm text-red-300">
+                      <p id="password-error" className="text-sm text-red-600">
                         {fieldErrors.password}
                       </p>
                     ) : null}
@@ -457,14 +465,14 @@ export default function LoginPage() {
                   <div className="flex items-center justify-between gap-2">
                     <label
                       htmlFor="remember-me"
-                      className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
+                      className="flex cursor-pointer items-center gap-2 text-sm text-[var(--text-secondary)]"
                     >
                       <input
                         id="remember-me"
                         type="checkbox"
                         checked={rememberMe}
                         onChange={e => setRememberMe(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400"
+                        className="h-4 w-4 rounded border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--accent)] focus:ring-[var(--border-focus)]"
                         disabled={loading || authLoading || !isMounted || isCoolingDown}
                       />
                       Remember me
@@ -472,7 +480,7 @@ export default function LoginPage() {
 
                     <Link
                       href="/forgot-password"
-                      className="text-sm font-medium text-cyan-300 transition hover:text-cyan-200"
+                      className="text-sm font-medium text-[var(--text-primary)] transition hover:text-[var(--text-secondary)]"
                     >
                       Forgot password?
                     </Link>
@@ -500,11 +508,11 @@ export default function LoginPage() {
                   </Button>
                 </form>
 
-                <div className="text-center text-sm text-slate-400">
+                <div className="text-center text-sm text-[var(--text-secondary)]">
                   Don&apos;t have an account?{' '}
                   <Link
                     href="/signup"
-                    className="font-medium text-cyan-300 transition hover:text-cyan-200"
+                    className="font-medium text-[var(--text-primary)] transition hover:text-[var(--text-secondary)]"
                   >
                     Sign up
                   </Link>

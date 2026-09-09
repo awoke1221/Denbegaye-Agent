@@ -55,23 +55,18 @@ export const IconNode = memo(
     // Advanced animation classes with multiple layers
     const nodeShadowStyle = selected
       ? {
-          boxShadow: `
-            0 0 10px 0 rgba(99, 102, 241, 0.4),
-            0 0 20px 0 rgba(99, 102, 241, 0.2),
-            0 0 30px 0 rgba(99, 102, 241, 0.1),
-            ${colorTheme.glow}
-          `,
+          boxShadow: `0 0 0 1px rgba(17, 24, 39, 0.08), 0 10px 22px rgba(15, 23, 42, 0.05)`,
         }
       : { boxShadow: colorTheme.glow };
 
     const nodeContainerClasses = clsx(
-      'relative flex flex-col items-center gap-3 rounded-[28px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-all duration-300',
+      'relative flex flex-col items-center gap-3 rounded-[18px] border border-[var(--border-default)] bg-[rgba(255,255,255,0.72)] p-3 shadow-[0_10px_22px_rgba(15,23,42,0.04)] backdrop-blur-sm transition-all duration-200',
       'node-base node-interactive',
       {
-        'node-selected-state ring-1 ring-white/70 shadow-[0_25px_80px_rgba(59,130,246,0.18)]':
+        'node-selected-state ring-1 ring-[rgba(17,24,39,0.12)] shadow-[0_12px_24px_rgba(15,23,42,0.06)]':
           selected,
         'node-drag-state node-dragging': isDragging,
-        'node-hover-state node-float-hover shadow-[0_25px_60px_rgba(59,130,246,0.14)]':
+        'node-hover-state node-float-hover shadow-[0_12px_24px_rgba(15,23,42,0.05)]':
           isHoveringNode && !isDragging,
         'node-click-pulse': isClickAnimating,
       }
@@ -90,20 +85,20 @@ export const IconNode = memo(
         {/* Background aura layer (only visible on selection) */}
         {selected && (
           <div
-            className="absolute inset-0 rounded-[28px] blur-2xl opacity-45 pointer-events-none"
+            className="absolute inset-0 rounded-[18px] blur-md opacity-20 pointer-events-none"
             style={{
-              background: `radial-gradient(circle, ${colorTheme.highlight} 0%, transparent 70%)`,
+              background: `radial-gradient(circle, ${colorTheme.highlight} 0%, transparent 78%)`,
             }}
           />
         )}
 
-        {/* Icon container with polished gradient and soft glow */}
+        {/* Icon container with polished neutral block styling */}
         <div
           className={clsx(
-            'flex items-center justify-center w-16 h-16 rounded-3xl text-white shadow-xl transition-all duration-300',
+            'flex items-center justify-center w-11 h-11 rounded-xl border border-[rgba(17,24,39,0.08)] bg-[var(--bg-subtle)] text-[var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.66)] transition-all duration-200',
             colorTheme.bg,
             {
-              'scale-110': isHoveringNode || selected,
+              'scale-[1.03]': isHoveringNode || selected,
             }
           )}
           style={nodeShadowStyle}
@@ -173,16 +168,13 @@ export const IconNode = memo(
         {/* Enhanced label with dynamic styling */}
         <span
           className={clsx(
-            'mt-2 text-sm font-semibold text-center max-w-[96px] truncate select-none text-slate-950',
-            'transition-all duration-300 drop-shadow',
+            'mt-1 text-[11px] font-medium tracking-[0.12em] text-center uppercase max-w-[96px] truncate select-none text-[var(--text-primary)]',
+            'transition-all duration-200',
             {
-              'scale-105': selected || isHoveringNode,
+              'scale-[1.02]': selected || isHoveringNode,
             }
           )}
           title={label}
-          style={{
-            textShadow: selected || isHoveringNode ? '0 2px 8px rgba(0, 0, 0, 0.12)' : 'none',
-          }}
         >
           {label}
         </span>
@@ -192,8 +184,8 @@ export const IconNode = memo(
           type="target"
           position={Position.Top}
           id="tool-target"
-          className="!w-4 !h-4 !rounded-sm !bg-cyan-500 !border-2 !border-cyan-300 !shadow-lg transition-all duration-200 hover:!bg-cyan-400"
-          style={{ top: -6, left: '50%', transform: 'translateX(-50%)' }}
+          className="!w-3 !h-3 !rounded-full !bg-[var(--bg-surface)] !border !border-[rgba(17,24,39,0.32)] transition-all duration-200"
+          style={{ top: -5, left: '50%', transform: 'translateX(-50%)' }}
         />
 
         {/* Enhanced handles with better visibility */}
@@ -202,18 +194,14 @@ export const IconNode = memo(
           position={Position.Left}
           id="flow-target"
           className={clsx(
-            '!w-3 !h-3 !left-0 !top-1/2 !-translate-y-1/2',
-            colorTheme.ring,
-            '!bg-white border-2 border-white',
+            '!w-2.5 !h-2.5 !left-0 !top-1/2 !-translate-y-1/2',
+            '!bg-[var(--bg-surface)] border border-[rgba(17,24,39,0.28)]',
             'transition-all duration-200',
-            'hover:!w-4 hover:!h-4 hover:shadow-xl',
-            'shadow-lg',
-            selected ? '!ring-2 !ring-offset-2' : ''
+            'hover:!w-3 hover:!h-3',
+            selected ? 'shadow-[0_0_0_2px_rgba(17,24,39,0.05)]' : ''
           )}
           style={{
-            boxShadow: selected
-              ? `0 0 12px 0 rgba(99, 102, 241, 0.4)`
-              : '0 2px 8px rgba(0, 0, 0, 0.15)',
+            boxShadow: selected ? '0 0 0 2px rgba(17, 24, 39, 0.05)' : 'none',
           }}
         />
         <Handle
@@ -221,18 +209,14 @@ export const IconNode = memo(
           position={Position.Right}
           id="flow-source"
           className={clsx(
-            '!w-3 !h-3 !right-0 !top-1/2 !-translate-y-1/2',
-            colorTheme.ring,
-            '!bg-white border-2 border-white',
+            '!w-2.5 !h-2.5 !right-0 !top-1/2 !-translate-y-1/2',
+            '!bg-[var(--bg-surface)] border border-[rgba(17,24,39,0.28)]',
             'transition-all duration-200',
-            'hover:!w-4 hover:!h-4 hover:shadow-xl',
-            'shadow-lg',
-            selected ? '!ring-2 !ring-offset-2' : ''
+            'hover:!w-3 hover:!h-3',
+            selected ? 'shadow-[0_0_0_2px_rgba(17,24,39,0.05)]' : ''
           )}
           style={{
-            boxShadow: selected
-              ? `0 0 12px 0 rgba(99, 102, 241, 0.4)`
-              : '0 2px 8px rgba(0, 0, 0, 0.15)',
+            boxShadow: selected ? '0 0 0 2px rgba(17, 24, 39, 0.05)' : 'none',
           }}
         />
 
@@ -240,8 +224,8 @@ export const IconNode = memo(
           type="source"
           position={Position.Bottom}
           id="tool-source"
-          className="!w-4 !h-4 !rounded-sm !bg-cyan-500 !border-2 !border-cyan-300 !shadow-lg transition-all duration-200 hover:!bg-cyan-400"
-          style={{ bottom: -6, left: '50%', transform: 'translateX(-50%)' }}
+          className="!w-3 !h-3 !rounded-full !bg-[var(--bg-surface)] !border !border-[rgba(17,24,39,0.32)] transition-all duration-200"
+          style={{ bottom: -5, left: '50%', transform: 'translateX(-50%)' }}
         />
       </div>
     );

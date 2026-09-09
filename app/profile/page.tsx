@@ -147,14 +147,14 @@ export default function ProfilePage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-[#020817] text-white">
+      <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)]">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--text-tertiary)]">
                 Account overview
               </p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-[var(--text-primary)] sm:text-4xl">
                 Profile
               </h1>
             </div>
@@ -162,18 +162,18 @@ export default function ProfilePage() {
             <Button
               onClick={signOut}
               variant="outline"
-              className="border-red-500/40 bg-red-500/5 text-red-200 hover:bg-red-500 hover:text-white"
+              className="border-[var(--border-default)] bg-[rgba(255,255,255,0.64)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
             >
               Sign Out
             </Button>
           </div>
 
           <div className="space-y-6">
-            <Card className="overflow-hidden border border-white/10 bg-slate-950/70 shadow-[0_30px_80px_rgba(15,23,42,0.8)]">
-              <div className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.12),transparent_22%)] p-6 sm:p-8">
+            <Card className="overflow-hidden border border-[var(--border-default)] bg-[rgba(255,255,255,0.72)] shadow-[0_30px_80px_rgba(15,23,42,0.05)]">
+              <div className="border-b border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-6 sm:p-8">
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20 border border-white/10 bg-slate-900 shadow-lg shadow-cyan-500/10">
+                    <Avatar className="h-20 w-20 border border-[var(--border-default)] bg-[var(--bg-soft)] shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
                       {(() => {
                         const src =
                           typeof user.user_metadata?.avatar_url === 'string'
@@ -186,21 +186,21 @@ export default function ProfilePage() {
 
                         return <AvatarImage src={src} alt={displayName || 'User avatar'} />;
                       })()}
-                      <AvatarFallback className="bg-gradient-to-br from-cyan-500 to-indigo-500 text-lg font-bold text-white">
+                      <AvatarFallback className="bg-[var(--button-bg)] text-lg font-bold text-[var(--button-text)]">
                         {avatarInitials}
                       </AvatarFallback>
                     </Avatar>
 
                     <div>
-                      <CardTitle className="text-2xl font-bold text-white sm:text-3xl">
+                      <CardTitle className="text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
                         {displayName}
                       </CardTitle>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Badge className="border border-cyan-400/20 bg-cyan-500/10 text-cyan-200">
+                        <Badge className="border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-secondary)]">
                           <Shield className="mr-1 h-3 w-3" />
                           Verified User
                         </Badge>
-                        <Badge className="border border-violet-400/20 bg-violet-500/10 text-violet-200">
+                        <Badge className="border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-secondary)]">
                           <Sparkles className="mr-1 h-3 w-3" />
                           Pro workspace
                         </Badge>
@@ -210,7 +210,7 @@ export default function ProfilePage() {
 
                   <Button
                     onClick={() => router.push('/agent-builder')}
-                    className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_16px_40px_rgba(34,211,238,0.35)]"
+                    className="bg-[var(--button-bg)] text-[var(--button-text)] shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
                   >
                     Go to Builder
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -220,39 +220,41 @@ export default function ProfilePage() {
 
               <CardContent className="space-y-8 p-6 sm:p-8">
                 <div>
-                  <h3 className="mb-4 flex items-center text-lg font-semibold text-white">
-                    <User className="mr-2 h-5 w-5 text-cyan-300" />
+                  <h3 className="mb-4 flex items-center text-lg font-semibold text-[var(--text-primary)]">
+                    <User className="mr-2 h-5 w-5 text-[var(--text-primary)]" />
                     Account Information
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    <div className="rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
                         Email address
                       </label>
-                      <div className="mt-2 flex items-center gap-2 text-slate-100">
-                        <Mail className="h-4 w-4 text-slate-400" />
+                      <div className="mt-2 flex items-center gap-2 text-[var(--text-primary)]">
+                        <Mail className="h-4 w-4 text-[var(--text-tertiary)]" />
                         <span>{user.email}</span>
                         {user.email_confirmed_at && (
-                          <Badge className="ml-auto border border-emerald-400/20 bg-emerald-500/10 text-emerald-200">
+                          <Badge className="ml-auto border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-secondary)]">
                             Verified
                           </Badge>
                         )}
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    <div className="rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
                         User ID
                       </label>
-                      <div className="mt-2 font-mono text-sm text-slate-200">{user.id}</div>
+                      <div className="mt-2 font-mono text-sm text-[var(--text-primary)]">
+                        {user.id}
+                      </div>
                     </div>
 
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    <div className="rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
                         Account created
                       </label>
-                      <div className="mt-2 flex items-center gap-2 text-slate-200">
-                        <Calendar className="h-4 w-4 text-slate-400" />
+                      <div className="mt-2 flex items-center gap-2 text-[var(--text-primary)]">
+                        <Calendar className="h-4 w-4 text-[var(--text-tertiary)]" />
                         <span>
                           {user.created_at
                             ? new Date(user.created_at).toLocaleDateString()
@@ -261,11 +263,11 @@ export default function ProfilePage() {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    <div className="rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
                         Last sign in
                       </label>
-                      <div className="mt-2 text-slate-200">
+                      <div className="mt-2 text-[var(--text-primary)]">
                         {user.last_sign_in_at
                           ? new Date(user.last_sign_in_at).toLocaleDateString()
                           : 'Unknown'}
@@ -274,41 +276,41 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <Separator className="bg-white/10" />
+                <Separator className="bg-[var(--border-default)]" />
 
                 <div>
-                  <h3 className="mb-4 flex items-center text-lg font-semibold text-white">
-                    <CreditCard className="mr-2 h-5 w-5 text-cyan-300" />
+                  <h3 className="mb-4 flex items-center text-lg font-semibold text-[var(--text-primary)]">
+                    <CreditCard className="mr-2 h-5 w-5 text-[var(--text-primary)]" />
                     Subscription & Billing
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    <div className="rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
                         Current plan
                       </label>
                       <div className="mt-2 flex items-center gap-2">
                         <Badge
                           className={`${
                             subscription?.plan_tier === 'enterprise'
-                              ? 'border border-violet-400/20 bg-violet-500/10 text-violet-200'
+                              ? 'border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)]'
                               : subscription?.plan_tier === 'pro'
-                                ? 'border border-cyan-400/20 bg-cyan-500/10 text-cyan-200'
-                                : 'border border-slate-400/20 bg-slate-500/10 text-slate-300'
+                                ? 'border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)]'
+                                : 'border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-secondary)]'
                           }`}
                         >
                           {subscription?.plan_name || 'Loading...'}
                         </Badge>
-                        <span className="text-sm capitalize text-slate-300">
+                        <span className="text-sm capitalize text-[var(--text-secondary)]">
                           {subscription?.billing_cycle}
                         </span>
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    <div className="rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-4">
+                      <label className="text-xs uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
                         Next billing date
                       </label>
-                      <div className="mt-2 text-slate-200">
+                      <div className="mt-2 text-[var(--text-primary)]">
                         {subscription?.current_period_end
                           ? new Date(subscription.current_period_end).toLocaleDateString()
                           : 'N/A'}
@@ -321,7 +323,7 @@ export default function ProfilePage() {
                       <Button
                         variant="outline"
                         onClick={() => router.push('/pricing')}
-                        className="border-cyan-500/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500 hover:text-white"
+                        className="border-[var(--border-default)] bg-[rgba(255,255,255,0.65)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                       >
                         <TrendingUp className="mr-2 h-4 w-4" />
                         Manage Subscription
@@ -331,33 +333,33 @@ export default function ProfilePage() {
                           variant="outline"
                           onClick={handleCancelSubscription}
                           disabled={canceling}
-                          className="border-red-500/40 bg-red-500/5 text-red-200 hover:bg-red-500 hover:text-white"
+                          className="border-[var(--border-default)] bg-[rgba(255,255,255,0.65)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                         >
                           {canceling ? 'Canceling...' : 'Cancel recurring payments'}
                         </Button>
                       )}
                     </div>
                     {cancelMessage && (
-                      <p className="mt-3 text-sm text-slate-300">{cancelMessage}</p>
+                      <p className="mt-3 text-sm text-[var(--text-secondary)]">{cancelMessage}</p>
                     )}
                   </div>
                 </div>
 
-                <Separator className="bg-white/10" />
+                <Separator className="bg-[var(--border-default)]" />
 
                 <div>
-                  <h3 className="mb-4 flex items-center text-lg font-semibold text-white">
-                    <TrendingUp className="mr-2 h-5 w-5 text-cyan-300" />
+                  <h3 className="mb-4 flex items-center text-lg font-semibold text-[var(--text-primary)]">
+                    <TrendingUp className="mr-2 h-5 w-5 text-[var(--text-primary)]" />
                     Usage This Month
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-4">
                       <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-slate-200">
-                          <Bot className="h-4 w-4 text-cyan-300" />
+                        <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                          <Bot className="h-4 w-4 text-[var(--text-primary)]" />
                           <span>AI Agents</span>
                         </div>
-                        <span className="text-sm text-slate-300">
+                        <span className="text-sm text-[var(--text-secondary)]">
                           {usageStats.agents?.current || 0} / {usageStats.agents?.limit || 0}
                         </span>
                       </div>

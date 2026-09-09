@@ -3006,7 +3006,7 @@ function AgentBuilderContent() {
     });
   };
   return (
-    <div className="h-screen flex bg-gradient-to-br from-slate-100 via-cyan-100 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+    <div className="h-screen flex bg-[var(--bg-page)] text-[var(--text-primary)]">
       <AgentBuilderSidebar_1.AgentBuilderSidebar
         sidebarCollapsed={sidebarCollapsed}
         setSidebarCollapsed={setSidebarCollapsed}

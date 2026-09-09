@@ -69,9 +69,11 @@ export function VariableTextarea({
         >
           <label
             style={{
-              fontSize: '13px',
-              fontWeight: 600,
-              color: 'var(--color-foreground)',
+              fontSize: '11px',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -79,7 +81,9 @@ export function VariableTextarea({
           >
             {label}
             {required && (
-              <span style={{ color: '#ef4444', fontSize: '16px', lineHeight: 1 }}>•</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1 }}>
+                •
+              </span>
             )}
           </label>
           <VariablePicker
@@ -103,26 +107,28 @@ export function VariableTextarea({
           style={{
             width: '100%',
             minHeight: '140px',
-            padding: '12px 16px',
+            padding: '12px 14px',
             fontSize: '13px',
-            border: '2px solid var(--color-border)',
+            border: '1px solid var(--border-default)',
             borderRadius: '12px',
-            background: disabled ? 'var(--color-muted)' : 'var(--color-input)',
-            color: 'var(--color-foreground)',
+            background: disabled ? 'rgba(17,24,39,0.02)' : 'rgba(255,255,255,0.34)',
+            color: 'var(--text-primary)',
             resize: 'vertical',
             outline: 'none',
             fontFamily: 'var(--font-mono)',
             lineHeight: 1.6,
             transition: 'all 0.2s ease',
             fontWeight: 500,
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
           }}
           onFocus={e => {
-            e.currentTarget.style.borderColor = '#667eea';
-            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+            e.currentTarget.style.borderColor = 'var(--border-focus)';
+            e.currentTarget.style.boxShadow =
+              '0 0 0 3px rgba(17,24,39,0.05), inset 0 1px 0 rgba(255,255,255,0.6)';
           }}
           onBlur={e => {
-            e.currentTarget.style.borderColor = 'var(--color-border)';
-            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.borderColor = 'var(--border-default)';
+            e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.6)';
           }}
         />
       </div>
@@ -131,9 +137,9 @@ export function VariableTextarea({
         <p
           style={{
             fontSize: '12px',
-            color: 'var(--color-muted-foreground)',
+            color: 'var(--text-secondary)',
             margin: 0,
-            lineHeight: 1.4,
+            lineHeight: 1.5,
           }}
         >
           {description}
@@ -158,9 +164,11 @@ export function VariableTextarea({
             style={{
               width: '100%',
               fontSize: '11px',
-              fontWeight: 600,
-              color: '#667eea',
+              fontWeight: 700,
+              color: 'var(--text-secondary)',
               marginBottom: '4px',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
             }}
           >
             ⚡ Inserted Variables:
@@ -173,10 +181,11 @@ export function VariableTextarea({
                 alignItems: 'center',
                 gap: '6px',
                 fontSize: '11px',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: '#fff',
-                padding: '6px 12px',
-                borderRadius: '10px',
+                background: 'rgba(17,24,39,0.05)',
+                color: 'var(--text-primary)',
+                padding: '6px 10px',
+                borderRadius: '9999px',
+                border: '1px solid var(--border-default)',
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 600,
                 animation: 'slideInUp 0.3s ease',

@@ -54,14 +54,14 @@ export function AgentBuilderDashboard({
   deleteAgent,
 }: AgentBuilderDashboardProps) {
   return (
-    <div className="flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-700">
+    <div className="flex-1 p-8 overflow-y-auto bg-[var(--bg-page)] text-[var(--text-primary)]">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-800 via-blue-800 to-indigo-800 dark:from-slate-100 dark:via-blue-100 dark:to-indigo-100 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
               Agent Analytics Dashboard
             </h1>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl">
+            <p className="text-lg text-[var(--text-secondary)] max-w-2xl">
               Comprehensive insights into your agent ecosystem, performance metrics, and workflow
               analytics
             </p>
@@ -69,14 +69,14 @@ export function AgentBuilderDashboard({
           <div className="flex flex-col sm:flex-row gap-4">
             <Button
               onClick={createNewAgentWorkflow}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              className="border border-[var(--border-default)] bg-[var(--bg-soft)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] shadow-[0_8px_18px_var(--shadow-soft)] transition-all duration-200"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create New Agent
             </Button>
             <Button
               variant="outline"
-              className="border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300"
+              className="border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all duration-300"
               onClick={exportDashboardReport}
             >
               <FileText className="w-5 h-5 mr-2" />
@@ -86,29 +86,29 @@ export function AgentBuilderDashboard({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/30 border-blue-200/50 dark:border-blue-800/50 shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="bg-[var(--bg-surface)] border border-[var(--border-default)] shadow-[0_10px_22px_var(--shadow-soft)] transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+              <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
                 Total Agents
               </CardTitle>
-              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                <FileText className="h-5 w-5 text-[var(--text-secondary)]" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+              <div className="text-3xl font-bold text-[var(--text-primary)]">
                 {userAgents.length}
               </div>
               <div className="flex items-center space-x-2 mt-2">
                 <Badge
                   variant="secondary"
-                  className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                  className="bg-[var(--bg-subtle)] text-[var(--text-secondary)] border border-[var(--border-default)]"
                 >
                   {draftUserAgents.length} Draft
                 </Badge>
                 <Badge
                   variant="default"
-                  className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                  className="bg-[var(--bg-subtle)] text-[var(--text-primary)] border border-[var(--border-default)]"
                 >
                   {activeUserAgents.length} Active
                 </Badge>
@@ -116,56 +116,56 @@ export function AgentBuilderDashboard({
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/50 dark:to-emerald-900/30 border-emerald-200/50 dark:border-emerald-800/50 shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="bg-[var(--bg-surface)] border border-[var(--border-default)] shadow-[0_10px_22px_var(--shadow-soft)] transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+              <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
                 Active Workflows
               </CardTitle>
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                <LayoutDashboard className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                <LayoutDashboard className="h-5 w-5 text-[var(--text-secondary)]" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
+              <div className="text-3xl font-bold text-[var(--text-primary)]">
                 {workflows.filter(w => w.status === 'active').length}
               </div>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
+              <p className="text-xs text-[var(--text-secondary)] mt-2">
                 {workflows.length} total workflows configured
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/50 dark:to-purple-900/30 border-purple-200/50 dark:border-purple-800/50 shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="bg-[var(--bg-surface)] border border-[var(--border-default)] shadow-[0_10px_22px_var(--shadow-soft)] transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold text-purple-800 dark:text-purple-200">
+              <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
                 Executions Today
               </CardTitle>
-              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                <Play className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                <Play className="h-5 w-5 text-[var(--text-secondary)]" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-purple-900 dark:text-purple-100">
+              <div className="text-3xl font-bold text-[var(--text-primary)]">
                 {Object.keys(executionStatuses).length}
               </div>
-              <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">
+              <p className="text-xs text-[var(--text-secondary)] mt-2">
                 {Object.values(executionStatuses).filter(s => s.status === 'completed').length}{' '}
                 successful
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/50 dark:to-amber-900/30 border-amber-200/50 dark:border-amber-800/50 shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="bg-[var(--bg-surface)] border border-[var(--border-default)] shadow-[0_10px_22px_var(--shadow-soft)] transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+              <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
                 Success Rate
               </CardTitle>
-              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                <Zap className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                <Zap className="h-5 w-5 text-[var(--text-secondary)]" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-amber-900 dark:text-amber-100">
+              <div className="text-3xl font-bold text-[var(--text-primary)]">
                 {Object.keys(executionStatuses).length > 0
                   ? Math.round(
                       (Object.values(executionStatuses).filter(s => s.status === 'completed')
@@ -176,23 +176,21 @@ export function AgentBuilderDashboard({
                   : 0}
                 %
               </div>
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                Last 24 hours performance
-              </p>
+              <p className="text-xs text-[var(--text-secondary)] mt-2">Last 24 hours performance</p>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <div className="xl:col-span-2 space-y-6">
-            <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl">
+            <Card className="border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[0_10px_22px_var(--shadow-soft)]">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                    <CardTitle className="text-xl font-semibold text-[var(--text-primary)]">
                       Your Agents
                     </CardTitle>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">
                       Manage and monitor your AI agent portfolio
                     </p>
                   </div>
@@ -200,7 +198,7 @@ export function AgentBuilderDashboard({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-slate-300 dark:border-slate-600"
+                      className="border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       View All
@@ -214,36 +212,36 @@ export function AgentBuilderDashboard({
                     {userAgents.slice(0, 10).map(agent => (
                       <div
                         key={agent.id}
-                        className="group flex items-center justify-between p-6 border border-slate-200/60 dark:border-slate-700/60 rounded-xl hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 dark:hover:from-blue-950/20 dark:hover:to-indigo-950/20 transition-all duration-300 cursor-pointer backdrop-blur-sm"
+                        className="group flex items-center justify-between p-6 border border-[var(--border-default)] rounded-xl hover:bg-[var(--bg-subtle)] hover:border-[var(--border-strong)] transition-all duration-200 cursor-pointer"
                         onClick={() => loadUserAgent(agent)}
                       >
                         <div className="flex items-center space-x-4">
                           <div className="relative">
-                            <Avatar className="w-12 h-12 ring-2 ring-slate-200 dark:ring-slate-700">
+                            <Avatar className="w-12 h-12 ring-2 ring-[var(--border-default)]">
                               <AvatarImage src={user?.user_metadata?.avatar_url} />
-                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold">
+                              <AvatarFallback className="bg-[var(--bg-subtle)] text-[var(--text-primary)] font-semibold border border-[var(--border-default)]">
                                 {agent.name?.charAt(0)?.toUpperCase() || 'A'}
                               </AvatarFallback>
                             </Avatar>
                             <div
-                              className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-slate-800 ${
+                              className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
                                 agent.status === 'active'
-                                  ? 'bg-emerald-500'
+                                  ? 'bg-[#1b1b1b]'
                                   : agent.status === 'error'
-                                    ? 'bg-red-500'
-                                    : 'bg-amber-500'
+                                    ? 'bg-[#6b7280]'
+                                    : 'bg-[#8b8b8b]'
                               }`}
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate group-hover:text-blue-900 dark:group-hover:text-blue-100 transition-colors">
+                            <h3 className="font-semibold text-[var(--text-primary)] truncate group-hover:text-[var(--text-primary)] transition-colors">
                               {agent.name}
                             </h3>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
+                            <p className="text-sm text-[var(--text-secondary)] mt-1 line-clamp-2">
                               {agent.description || 'No description provided'}
                             </p>
                             <div className="flex items-center space-x-4 mt-2">
-                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                              <span className="text-xs text-[var(--text-tertiary)]">
                                 Updated{' '}
                                 {agent.updated_at
                                   ? new Date(agent.updated_at).toLocaleDateString()
@@ -251,7 +249,7 @@ export function AgentBuilderDashboard({
                               </span>
                               <Badge
                                 variant={agent.status === 'active' ? 'default' : 'secondary'}
-                                className="text-xs"
+                                className="text-xs border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-secondary)]"
                               >
                                 {agent.status}
                               </Badge>
@@ -266,7 +264,7 @@ export function AgentBuilderDashboard({
                               e.stopPropagation();
                               loadUserAgent(agent);
                             }}
-                            className="hover:bg-blue-100 dark:hover:bg-blue-900"
+                            className="text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
@@ -277,7 +275,7 @@ export function AgentBuilderDashboard({
                               e.stopPropagation();
                               exportAgentJson(agent);
                             }}
-                            className="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                            className="text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                           >
                             <Download className="w-4 h-4" />
                           </Button>
@@ -288,7 +286,7 @@ export function AgentBuilderDashboard({
                               e.stopPropagation();
                               deleteAgent(agent.id);
                             }}
-                            className="hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
+                            className="text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -300,16 +298,16 @@ export function AgentBuilderDashboard({
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
                           <FileText className="w-8 h-8 text-slate-400 dark:text-slate-500" />
                         </div>
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
                           No agents yet
                         </h3>
-                        <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-sm mx-auto">
+                        <p className="text-[var(--text-secondary)] mb-6 max-w-sm mx-auto">
                           Create your first AI agent to get started with automated workflows and
                           intelligent processing.
                         </p>
                         <Button
                           onClick={createNewAgentWorkflow}
-                          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                          className="border border-[var(--border-default)] bg-[var(--bg-soft)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Create Your First Agent
@@ -323,15 +321,15 @@ export function AgentBuilderDashboard({
           </div>
 
           <div className="space-y-6">
-            <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl">
+            <Card className="border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[0_10px_22px_var(--shadow-soft)]">
               <CardHeader className="pb-4 flex items-center justify-between gap-4">
-                <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">
                   Recent Executions
                 </CardTitle>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300"
+                  className="border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all duration-300"
                   onClick={clearExecutions}
                 >
                   Clear Executions
@@ -360,10 +358,10 @@ export function AgentBuilderDashboard({
                               }`}
                             />
                             <div>
-                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                              <p className="text-sm font-medium text-[var(--text-primary)]">
                                 Execution {executionId.slice(-8)}
                               </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                              <p className="text-xs text-[var(--text-secondary)]">
                                 {status.status}
                               </p>
                             </div>
@@ -387,9 +385,7 @@ export function AgentBuilderDashboard({
                         <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
                           <Play className="w-6 h-6 text-slate-400 dark:text-slate-500" />
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                          No recent executions
-                        </p>
+                        <p className="text-sm text-[var(--text-secondary)]">No recent executions</p>
                       </div>
                     )}
                   </div>
@@ -397,35 +393,35 @@ export function AgentBuilderDashboard({
               </CardContent>
             </Card>
 
-            <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl">
+            <Card className="border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[0_10px_22px_var(--shadow-soft)]">
               <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">
                   Quick Actions
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
                   variant="outline"
-                  className="w-full justify-start border-slate-300 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300"
+                  className="w-full justify-start border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all duration-300"
                   onClick={() => setActiveSection('templates')}
                 >
-                  <Zap className="w-4 h-4 mr-3 text-blue-600 dark:text-blue-400" />
+                  <Zap className="w-4 h-4 mr-3 text-[var(--text-secondary)]" />
                   Browse Templates
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-start border-slate-300 dark:border-slate-600 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-300"
+                  className="w-full justify-start border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all duration-300"
                   onClick={() => setActiveSection('webhooks')}
                 >
-                  <Webhook className="w-4 h-4 mr-3 text-purple-600 dark:text-purple-400" />
+                  <Webhook className="w-4 h-4 mr-3 text-[var(--text-secondary)]" />
                   Manage Webhooks
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-start border-slate-300 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-600 transition-all duration-300"
+                  className="w-full justify-start border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all duration-300"
                   onClick={() => setActiveSection('vault')}
                 >
-                  <Database className="w-4 h-4 mr-3 text-emerald-600 dark:text-emerald-400" />
+                  <Database className="w-4 h-4 mr-3 text-[var(--text-secondary)]" />
                   Credentials Vault
                 </Button>
                 <Button

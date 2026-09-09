@@ -99,22 +99,22 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#020817] text-slate-100">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.16),transparent_26%)]" />
+    <div className="relative min-h-screen overflow-hidden bg-[var(--bg-page)] text-[var(--text-primary)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(17,24,39,0.04),transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(17,24,39,0.03),transparent_26%)]" />
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10">
-        <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/80 shadow-[0_40px_120px_rgba(15,23,42,0.9)] backdrop-blur-xl lg:grid-cols-[1.15fr_0.95fr]">
-          <div className="flex flex-col justify-between bg-slate-950/80 px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
+        <div className="grid w-full overflow-hidden rounded-[2rem] border border-[var(--border-default)] bg-[rgba(255,255,255,0.8)] shadow-[0_40px_120px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:grid-cols-[1.15fr_0.95fr]">
+          <div className="flex flex-col justify-between bg-[rgba(255,255,255,0.7)] px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
                 <LockKeyhole className="h-3.5 w-3.5" />
                 Secure reset
               </div>
 
               <div className="space-y-5">
-                <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                <h1 className="text-4xl font-black tracking-tight text-[var(--text-primary)] sm:text-5xl">
                   Choose a new password
                 </h1>
-                <p className="max-w-lg text-base leading-7 text-slate-300 sm:text-lg">
+                <p className="max-w-lg text-base leading-7 text-[var(--text-secondary)] sm:text-lg">
                   Create a strong password to keep your account protected. Once updated, you’ll be
                   ready to sign back in immediately.
                 </p>
@@ -122,45 +122,49 @@ export default function ResetPasswordPage() {
             </div>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300">
+              <div className="rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.62)] p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--bg-soft)] text-[var(--text-primary)]">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
-                <p className="text-base font-semibold text-white">Safe recovery</p>
-                <p className="mt-2 text-sm text-slate-300">
+                <p className="text-base font-semibold text-[var(--text-primary)]">Safe recovery</p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
                   Password recovery is verified in-browser before updates are applied.
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
+              <div className="rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.62)] p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--bg-soft)] text-[var(--text-primary)]">
                   <ArrowRight className="h-5 w-5" />
                 </div>
-                <p className="text-base font-semibold text-white">Ready to sign in</p>
-                <p className="mt-2 text-sm text-slate-300">
+                <p className="text-base font-semibold text-[var(--text-primary)]">
+                  Ready to sign in
+                </p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
                   Finish reset and continue where you left off.
                 </p>
               </div>
             </div>
           </div>
 
-          <Card className="border-0 bg-slate-900/90 shadow-none">
+          <Card className="border-0 bg-[rgba(255,255,255,0.9)] shadow-none">
             <CardHeader className="px-6 pb-4 pt-7 sm:px-8">
-              <CardTitle className="text-3xl font-bold text-white">Reset password</CardTitle>
-              <CardDescription className="mt-2 text-slate-400">
+              <CardTitle className="text-3xl font-bold text-[var(--text-primary)]">
+                Reset password
+              </CardTitle>
+              <CardDescription className="mt-2 text-[var(--text-secondary)]">
                 Create a new password for your account.
               </CardDescription>
             </CardHeader>
             <CardContent className="px-6 pb-8 sm:px-8">
               {isVerifying ? (
-                <div className="rounded-2xl border border-white/10 bg-slate-950/80 px-6 py-10 text-center text-slate-300">
+                <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-subtle)] px-6 py-10 text-center text-[var(--text-secondary)]">
                   Checking your reset link…
                 </div>
               ) : error ? (
                 <div className="space-y-4">
                   <div
                     role="alert"
-                    className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                    className="rounded-2xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-700"
                   >
                     {error}
                   </div>
@@ -168,13 +172,13 @@ export default function ResetPasswordPage() {
                     <Button
                       variant="secondary"
                       onClick={() => router.replace('/forgot-password')}
-                      className="border-white/10 bg-white/5 text-white hover:bg-white/10"
+                      className="border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                     >
                       Request a new reset link
                     </Button>
                     <Link
                       href="/login"
-                      className="text-center text-sm font-medium text-cyan-300 transition hover:text-cyan-200"
+                      className="text-center text-sm font-medium text-[var(--text-primary)] transition hover:text-[var(--text-secondary)]"
                     >
                       Back to sign in
                     </Link>
@@ -185,14 +189,14 @@ export default function ResetPasswordPage() {
                   {success ? (
                     <div
                       role="status"
-                      className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"
+                      className="rounded-2xl border border-emerald-500/20 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
                     >
                       {success}
                     </div>
                   ) : null}
 
                   <div className="space-y-2">
-                    <Label htmlFor="reset-password" className="text-slate-200">
+                    <Label htmlFor="reset-password" className="text-[var(--text-primary)]">
                       New password
                     </Label>
                     <Input
@@ -203,14 +207,14 @@ export default function ResetPasswordPage() {
                       autoComplete="new-password"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      className="border-slate-700 bg-slate-950/90 text-white placeholder:text-slate-500"
+                      className="border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                       required
                       disabled={submitting}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="text-slate-200">
+                    <Label htmlFor="confirm-password" className="text-[var(--text-primary)]">
                       Confirm password
                     </Label>
                     <Input
@@ -221,7 +225,7 @@ export default function ResetPasswordPage() {
                       autoComplete="new-password"
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
-                      className="border-slate-700 bg-slate-950/90 text-white placeholder:text-slate-500"
+                      className="border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                       required
                       disabled={submitting}
                     />
@@ -229,18 +233,18 @@ export default function ResetPasswordPage() {
 
                   <Button
                     type="submit"
-                    className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-500 px-5 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-2xl bg-[var(--button-bg)] px-5 py-4 text-sm font-semibold text-[var(--button-text)] shadow-[0_12px_28px_rgba(15,23,42,0.08)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={submitting}
                     aria-busy={submitting}
                   >
                     {submitting ? 'Updating password...' : 'Update password'}
                   </Button>
 
-                  <p className="text-center text-sm text-slate-400">
+                  <p className="text-center text-sm text-[var(--text-secondary)]">
                     Remembered your password?{' '}
                     <Link
                       href="/login"
-                      className="font-medium text-cyan-300 transition hover:text-cyan-200"
+                      className="font-medium text-[var(--text-primary)] transition hover:text-[var(--text-secondary)]"
                     >
                       Sign in
                     </Link>

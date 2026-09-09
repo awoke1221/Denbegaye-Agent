@@ -43,7 +43,7 @@ export function PasswordField({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          className="bg-slate-950/95 text-white pr-10 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="border-[var(--border-default)] bg-[var(--bg-subtle)] pr-10 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] disabled:opacity-60 disabled:cursor-not-allowed"
           disabled={disabled}
           aria-invalid={hasError}
           aria-describedby={ariaDescribedBy}
@@ -57,14 +57,14 @@ export function PasswordField({
           onClick={() => setVisible(prev => !prev)}
           aria-label={visible ? 'Hide password' : 'Show password'}
           title={visible ? 'Hide password' : 'Show password'}
-          className="absolute inset-y-0 right-2 flex items-center rounded-md px-2 text-slate-400 transition-colors duration-150 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+          className="absolute inset-y-0 right-2 flex items-center rounded-md px-2 text-[var(--text-secondary)] transition-colors duration-150 hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)]"
         >
           {visible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
         </button>
       </div>
 
       {errorMessage ? (
-        <p id={`${id}-error`} role="alert" className="text-sm text-rose-300">
+        <p id={`${id}-error`} role="alert" className="text-sm text-red-600">
           {errorMessage}
         </p>
       ) : null}

@@ -26,13 +26,13 @@ const getCategoryIcon = (category: string) => {
 const getCategoryColor = (category: string) => {
   switch (category.toLowerCase()) {
     case 'output':
-      return '#3b82f6';
+      return 'var(--text-secondary)';
     case 'data':
-      return '#10b981';
+      return 'var(--text-secondary)';
     case 'meta':
-      return '#f59e0b';
+      return 'var(--text-secondary)';
     default:
-      return '#8b5cf6';
+      return 'var(--text-secondary)';
   }
 };
 
@@ -90,21 +90,21 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
           alignItems: 'center',
           gap: '8px',
           padding: '8px 12px',
-          fontSize: '12px',
-          fontWeight: 600,
-          background: open
-            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          border: 'none',
+          fontSize: '11px',
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          background: open ? 'rgba(17,24,39,0.06)' : 'rgba(255,255,255,0.34)',
+          border: '1px solid var(--border-default)',
           borderRadius: '10px',
           cursor: 'pointer',
-          color: '#fff',
+          color: 'var(--text-primary)',
           whiteSpace: 'nowrap',
-          transition: 'all 0.3s ease',
+          transition: 'all 0.2s ease',
           boxShadow: open
-            ? '0 8px 24px rgba(102, 126, 234, 0.4)'
-            : '0 4px 12px rgba(102, 126, 234, 0.2)',
-          transform: open ? 'translateY(-2px)' : 'translateY(0)',
+            ? '0 6px 14px rgba(15,23,42,0.05)'
+            : 'inset 0 1px 0 rgba(255,255,255,0.6)',
+          transform: open ? 'translateY(-1px)' : 'translateY(0)',
         }}
       >
         <span style={{ fontSize: '14px' }}>⚡</span>
@@ -138,10 +138,10 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
               width: '90vw',
               maxWidth: '900px',
               maxHeight: '85vh',
-              background: 'var(--color-popover)',
-              border: '1px solid var(--color-border)',
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--border-default)',
               borderRadius: '20px',
-              boxShadow: '0 24px 48px rgba(0, 0, 0, 0.2), 0 0 100px rgba(102, 126, 234, 0.15)',
+              boxShadow: '0 18px 38px rgba(15,23,42,0.09)',
               zIndex: 1000,
               display: 'flex',
               flexDirection: 'column',
@@ -170,8 +170,8 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
             <div
               style={{
                 padding: '24px',
-                borderBottom: '1px solid var(--color-border)',
-                background: 'var(--color-card)',
+                borderBottom: '1px solid var(--border-default)',
+                background: 'rgba(255,255,255,0.22)',
               }}
             >
               <div
@@ -187,7 +187,7 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
                     margin: 0,
                     fontSize: '20px',
                     fontWeight: 700,
-                    color: 'var(--color-foreground)',
+                    color: 'var(--text-primary)',
                   }}
                 >
                   ⚡ Insert Variable from Previous Node
@@ -199,7 +199,7 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
                     border: 'none',
                     fontSize: '24px',
                     cursor: 'pointer',
-                    color: 'var(--color-muted-foreground)',
+                    color: 'var(--text-secondary)',
                     padding: '4px 8px',
                   }}
                 >
@@ -239,20 +239,22 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
                       paddingTop: '12px',
                       paddingBottom: '12px',
                       fontSize: '14px',
-                      border: '2px solid var(--color-border)',
+                      border: '1px solid var(--border-default)',
                       borderRadius: '12px',
-                      background: 'var(--color-input)',
-                      color: 'var(--color-foreground)',
+                      background: 'rgba(255,255,255,0.34)',
+                      color: 'var(--text-primary)',
                       outline: 'none',
                       transition: 'all 0.2s ease',
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
                     }}
                     onFocus={e => {
-                      e.currentTarget.style.borderColor = '#667eea';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                      e.currentTarget.style.borderColor = 'var(--border-focus)';
+                      e.currentTarget.style.boxShadow =
+                        '0 0 0 3px rgba(17,24,39,0.05), inset 0 1px 0 rgba(255,255,255,0.6)';
                     }}
                     onBlur={e => {
-                      e.currentTarget.style.borderColor = 'var(--color-border)';
-                      e.currentTarget.style.boxShadow = 'none';
+                      e.currentTarget.style.borderColor = 'var(--border-default)';
+                      e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.6)';
                     }}
                   />
                 </div>
@@ -342,8 +344,9 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
                                 width: '32px',
                                 height: '32px',
                                 borderRadius: '10px',
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                color: '#fff',
+                                background: 'rgba(17,24,39,0.04)',
+                                color: 'var(--text-primary)',
+                                border: '1px solid var(--border-default)',
                                 fontWeight: 700,
                                 fontSize: '14px',
                               }}
@@ -374,8 +377,9 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
                               style={{
                                 fontSize: '12px',
                                 fontWeight: 600,
-                                color: '#667eea',
-                                background: 'rgba(102, 126, 234, 0.1)',
+                                color: 'var(--text-secondary)',
+                                background: 'rgba(17,24,39,0.04)',
+                                border: '1px solid var(--border-default)',
                                 padding: '4px 10px',
                                 borderRadius: '8px',
                               }}
@@ -429,7 +433,7 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
                                   style={{
                                     fontSize: '13px',
                                     fontFamily: 'var(--font-mono)',
-                                    color: '#667eea',
+                                    color: 'var(--text-primary)',
                                     fontWeight: 600,
                                     wordBreak: 'break-all',
                                     marginBottom: '4px',
@@ -471,8 +475,9 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
                                   gap: '4px',
                                   fontSize: '11px',
                                   fontWeight: 600,
-                                  color: '#fff',
-                                  background: getCategoryColor(v.category),
+                                  color: 'var(--text-secondary)',
+                                  background: 'rgba(17,24,39,0.04)',
+                                  border: '1px solid var(--border-default)',
                                   padding: '4px 12px',
                                   borderRadius: '6px',
                                   whiteSpace: 'nowrap',
@@ -624,16 +629,16 @@ export function VariablePicker({ variables, onSelect, fieldKey, debugData }: Var
                 <div
                   style={{
                     padding: '12px',
-                    background: 'rgba(102, 126, 234, 0.05)',
+                    background: 'rgba(17,24,39,0.03)',
                     borderRadius: '10px',
-                    border: '1px solid rgba(102, 126, 234, 0.2)',
+                    border: '1px solid var(--border-default)',
                   }}
                 >
                   <div
                     style={{
                       fontSize: '12px',
                       fontWeight: 700,
-                      color: '#667eea',
+                      color: 'var(--text-primary)',
                       marginBottom: '8px',
                     }}
                   >

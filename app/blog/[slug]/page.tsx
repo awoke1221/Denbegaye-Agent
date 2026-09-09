@@ -56,18 +56,20 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white">
+    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)]">
       <main className="mx-auto max-w-5xl px-6 py-20">
         <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-cyan-300">Blog post</p>
-            <h1 className="mt-3 text-4xl font-black tracking-tight text-white sm:text-5xl">
+            <p className="text-sm uppercase tracking-[0.3em] text-[var(--text-secondary)]">
+              Blog post
+            </p>
+            <h1 className="mt-3 text-4xl font-black tracking-tight text-[var(--text-primary)] sm:text-5xl">
               {post.title}
             </h1>
           </div>
           <Link
             href="/blog"
-            className="inline-flex items-center rounded-3xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-cyan-400/40 hover:bg-white/10"
+            className="inline-flex items-center rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.68)] px-5 py-3 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-hover)]"
           >
             ← Back to blog
           </Link>

@@ -74,22 +74,22 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#020817] text-slate-100">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.16),transparent_26%)]" />
+    <div className="relative min-h-screen overflow-hidden bg-[var(--bg-page)] text-[var(--text-primary)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(17,24,39,0.04),transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(17,24,39,0.03),transparent_26%)]" />
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10">
-        <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/80 shadow-[0_40px_120px_rgba(15,23,42,0.9)] backdrop-blur-xl lg:grid-cols-[1.15fr_0.95fr]">
-          <div className="flex flex-col justify-between bg-slate-950/80 px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
+        <div className="grid w-full overflow-hidden rounded-[2rem] border border-[var(--border-default)] bg-[rgba(255,255,255,0.8)] shadow-[0_40px_120px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:grid-cols-[1.15fr_0.95fr]">
+          <div className="flex flex-col justify-between bg-[rgba(255,255,255,0.7)] px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
                 <LockKeyhole className="h-3.5 w-3.5" />
                 Password help
               </div>
 
               <div className="space-y-5">
-                <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                <h1 className="text-4xl font-black tracking-tight text-[var(--text-primary)] sm:text-5xl">
                   Reset your password
                 </h1>
-                <p className="max-w-lg text-base leading-7 text-slate-300 sm:text-lg">
+                <p className="max-w-lg text-base leading-7 text-[var(--text-secondary)] sm:text-lg">
                   Enter the email tied to your account, and we’ll send a secure recovery link so you
                   can regain access quickly.
                 </p>
@@ -97,32 +97,36 @@ export default function ForgotPasswordPage() {
             </div>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300">
+              <div className="rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.62)] p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--bg-soft)] text-[var(--text-primary)]">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
-                <p className="text-base font-semibold text-white">Secure recovery</p>
-                <p className="mt-2 text-sm text-slate-300">
+                <p className="text-base font-semibold text-[var(--text-primary)]">
+                  Secure recovery
+                </p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
                   Protected by secure reset links and verified ownership checks.
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
+              <div className="rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.62)] p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--bg-soft)] text-[var(--text-primary)]">
                   <Send className="h-5 w-5" />
                 </div>
-                <p className="text-base font-semibold text-white">Fast delivery</p>
-                <p className="mt-2 text-sm text-slate-300">
+                <p className="text-base font-semibold text-[var(--text-primary)]">Fast delivery</p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
                   Expect a reset email in just a few moments.
                 </p>
               </div>
             </div>
           </div>
 
-          <Card className="border-0 bg-slate-900/90 shadow-none">
+          <Card className="border-0 bg-[rgba(255,255,255,0.9)] shadow-none">
             <CardHeader className="px-6 pb-4 pt-7 sm:px-8">
-              <CardTitle className="text-3xl font-bold text-white">Forgot password</CardTitle>
-              <CardDescription className="mt-2 text-slate-400">
+              <CardTitle className="text-3xl font-bold text-[var(--text-primary)]">
+                Forgot password
+              </CardTitle>
+              <CardDescription className="mt-2 text-[var(--text-secondary)]">
                 Reset access using a secure password recovery email.
               </CardDescription>
             </CardHeader>
@@ -131,7 +135,7 @@ export default function ForgotPasswordPage() {
                 {error ? (
                   <div
                     role="alert"
-                    className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                    className="rounded-2xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-700"
                   >
                     {error}
                   </div>
@@ -139,14 +143,14 @@ export default function ForgotPasswordPage() {
                 {message ? (
                   <div
                     role="status"
-                    className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"
+                    className="rounded-2xl border border-emerald-500/20 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
                   >
                     {message}
                   </div>
                 ) : null}
 
                 <div className="space-y-2">
-                  <Label htmlFor="forgot-email" className="text-slate-200">
+                  <Label htmlFor="forgot-email" className="text-[var(--text-primary)]">
                     Email address
                   </Label>
                   <Input
@@ -157,7 +161,7 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     autoComplete="email"
-                    className="border-slate-700 bg-slate-950/90 text-white placeholder:text-slate-500"
+                    className="border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                     required
                     disabled={sending}
                   />
@@ -165,7 +169,7 @@ export default function ForgotPasswordPage() {
 
                 <Button
                   type="submit"
-                  className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-500 px-5 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-2xl bg-[var(--button-bg)] px-5 py-4 text-sm font-semibold text-[var(--button-text)] shadow-[0_12px_28px_rgba(15,23,42,0.08)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={sending}
                   aria-busy={sending}
                 >
@@ -173,11 +177,11 @@ export default function ForgotPasswordPage() {
                 </Button>
               </form>
 
-              <p className="mt-4 text-center text-sm text-slate-400">
+              <p className="mt-4 text-center text-sm text-[var(--text-secondary)]">
                 Remembered your password?{' '}
                 <Link
                   href="/login"
-                  className="font-medium text-cyan-300 transition hover:text-cyan-200"
+                  className="font-medium text-[var(--text-primary)] transition hover:text-[var(--text-secondary)]"
                 >
                   Sign in
                 </Link>

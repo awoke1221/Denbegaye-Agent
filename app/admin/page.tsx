@@ -269,7 +269,7 @@ export default function AdminDashboard() {
 
   if (authLoading || pageLoading) {
     return (
-      <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] flex items-center justify-center">
         <div className="text-center">
           <Activity className="w-8 h-8 animate-spin mx-auto mb-4" />
           <p>Checking authentication...</p>
@@ -280,11 +280,13 @@ export default function AdminDashboard() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] flex items-center justify-center">
         <div className="text-center">
           <Shield className="w-16 h-16 text-red-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-          <p className="text-gray-400">You don't have permission to access the admin dashboard.</p>
+          <p className="text-[var(--text-secondary)]">
+            You don't have permission to access the admin dashboard.
+          </p>
         </div>
       </div>
     );
@@ -292,7 +294,7 @@ export default function AdminDashboard() {
 
   if (pageLoading) {
     return (
-      <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] flex items-center justify-center">
         <div className="text-center">
           <Activity className="w-8 h-8 animate-spin mx-auto mb-4" />
           <p>Loading admin dashboard...</p>
@@ -302,13 +304,14 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/5 border-b border-white/10">
+    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)]">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[rgba(255,255,255,0.7)] border-b border-[var(--border-default)]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Crown className="w-8 h-8 text-yellow-400" />
-            <h1 className="text-xl font-bold tracking-tight">Advanced Admin Dashboard</h1>
+            <Crown className="w-8 h-8 text-[var(--text-primary)]" />
+            <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
+              Advanced Admin Dashboard
+            </h1>
           </div>
           <div className="flex items-center gap-4">
             <Badge
@@ -321,7 +324,7 @@ export default function AdminDashboard() {
             <Button
               onClick={() => router.push('/admin/blog')}
               variant="ghost"
-              className="text-gray-400 hover:text-white"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >
               <BookOpen className="mr-2 h-4 w-4" />
               Blog posts
@@ -329,14 +332,14 @@ export default function AdminDashboard() {
             <Button
               onClick={() => router.push('/')}
               variant="ghost"
-              className="text-gray-400 hover:text-white"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >
               Back to App
             </Button>
             <Button
               onClick={fetchDashboardData}
               variant="ghost"
-              className="text-gray-400 hover:text-white"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               disabled={pageLoading}
             >
               <RefreshCw className={`w-4 h-4 ${pageLoading ? 'animate-spin' : ''}`} />

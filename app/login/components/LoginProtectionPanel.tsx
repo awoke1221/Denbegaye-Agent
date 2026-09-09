@@ -19,14 +19,14 @@ export function LoginProtectionPanel({
     <div
       role="status"
       aria-live="polite"
-      className="rounded-3xl border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-100"
+      className="rounded-3xl border border-amber-400/30 bg-amber-50 p-4 text-sm text-amber-900"
     >
-      <p className="font-semibold text-amber-200">
+      <p className="font-semibold text-amber-900">
         {cooldownSeconds > 0 ? 'Temporary login cooldown' : 'Login protection active'}
       </p>
-      <p className="mt-2 text-slate-200">{cooldownMessage}</p>
+      <p className="mt-2 text-amber-800">{cooldownMessage}</p>
       {failedAttempts > 0 && cooldownSeconds === 0 && (
-        <p className="mt-2 text-slate-400">
+        <p className="mt-2 text-amber-700">
           If you need help, verify your email and password before trying again.
         </p>
       )}

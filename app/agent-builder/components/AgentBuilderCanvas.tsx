@@ -71,10 +71,10 @@ export function AgentBuilderCanvas({
   return (
     <div className="flex-1 relative">
       {activeSection === 'templates' ? (
-        <div className="h-full overflow-y-auto bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-900 p-6">
+        <div className="h-full overflow-y-auto bg-[var(--bg-page)] p-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+              <h2 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] mb-2">
                 Agent Templates
               </h2>
               <p className="text-slate-600 dark:text-slate-400">
@@ -85,7 +85,7 @@ export function AgentBuilderCanvas({
               {AgentBuilderTemplates.map(template => (
                 <div
                   key={template.id}
-                  className="group relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
+                  className="group relative bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-default)] p-6 hover:border-[var(--border-strong)] hover:shadow-[0_10px_22px_var(--shadow-soft)] transition-all duration-200 cursor-pointer"
                   onClick={() => {
                     setNodes(template.nodes);
                     setEdges(template.edges);
@@ -95,8 +95,8 @@ export function AgentBuilderCanvas({
                   }}
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-[var(--text-primary)]" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-slate-900 dark:text-slate-100">
@@ -112,7 +112,7 @@ export function AgentBuilderCanvas({
                   </p>
                   <Button
                     size="sm"
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                    className="w-full border border-[var(--border-default)] bg-[var(--bg-soft)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                   >
                     Use Template
                   </Button>
@@ -122,7 +122,7 @@ export function AgentBuilderCanvas({
           </div>
         </div>
       ) : activeSection === 'webhooks' ? (
-        <div className="h-full overflow-y-auto bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-900 p-6">
+        <div className="h-full overflow-y-auto bg-[var(--bg-page)] p-6">
           <WebhookManager workflows={workflows} />
         </div>
       ) : (
@@ -154,7 +154,7 @@ export function AgentBuilderCanvas({
           fitView
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
-          className="reactflow-builder-canvas bg-gradient-to-br from-cyan-50 via-slate-100 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950"
+          className="reactflow-builder-canvas bg-[var(--bg-page)]"
           panOnDrag
           zoomOnScroll
           minZoom={0.3}

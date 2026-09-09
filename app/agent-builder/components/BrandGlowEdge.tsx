@@ -21,31 +21,24 @@ export function BrandGlowEdge({
     targetY,
     targetPosition,
   });
-  // Pick color based on source node type if available
-  const color = (data && data.color) || '#6366f1';
+
+  const color = (data && data.color) || 'rgba(17, 24, 39, 0.5)';
+
   return (
     <g>
       <path
         id={id}
         style={{
           stroke: color,
-          strokeWidth: 3,
-          filter: 'url(#glow)',
+          strokeWidth: 2.2,
+          strokeLinecap: 'round',
+          opacity: 0.9,
           ...style,
         }}
         className="animated-edge"
         d={edgePath}
         markerEnd={markerEnd}
       />
-      <defs>
-        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
-          <feMerge>
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
     </g>
   );
 }

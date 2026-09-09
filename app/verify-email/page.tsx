@@ -140,8 +140,8 @@ export default function VerifyEmailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#020817] text-slate-100">
-        <div className="rounded-3xl border border-white/10 bg-slate-900/80 px-8 py-6 text-sm text-slate-300">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-page)] text-[var(--text-primary)]">
+        <div className="rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.72)] px-8 py-6 text-sm text-[var(--text-secondary)]">
           Checking account status…
         </div>
       </div>
@@ -149,20 +149,20 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#020817] text-slate-100">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.16),transparent_26%)]" />
+    <div className="relative min-h-screen overflow-hidden bg-[var(--bg-page)] text-[var(--text-primary)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(17,24,39,0.04),transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(17,24,39,0.03),transparent_26%)]" />
       <div className="relative mx-auto flex min-h-screen max-w-5xl items-center justify-center px-4 py-10">
-        <div className="w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/80 shadow-[0_40px_120px_rgba(15,23,42,0.85)] backdrop-blur-xl">
-          <div className="border-b border-white/10 bg-slate-900/80 p-6 sm:p-8">
+        <div className="w-full max-w-xl overflow-hidden rounded-[2rem] border border-[var(--border-default)] bg-[rgba(255,255,255,0.8)] shadow-[0_40px_120px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+          <div className="border-b border-[var(--border-default)] bg-[rgba(255,255,255,0.7)] p-6 sm:p-8">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 text-cyan-300">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bg-soft)] text-[var(--text-primary)]">
                 <MailCheck className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
                   Secure access
                 </p>
-                <h1 className="mt-2 text-2xl font-bold text-white sm:text-3xl">
+                <h1 className="mt-2 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
                   Verify your email
                 </h1>
               </div>
@@ -170,8 +170,8 @@ export default function VerifyEmailPage() {
           </div>
 
           <div className="space-y-6 p-6 sm:p-8">
-            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-              <Avatar className="h-12 w-12 border border-white/10">
+            <div className="flex items-center gap-4 rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.64)] p-4">
+              <Avatar className="h-12 w-12 border border-[var(--border-default)]">
                 <AvatarImage
                   src={
                     user?.user_metadata?.avatar_url ||
@@ -181,22 +181,22 @@ export default function VerifyEmailPage() {
                   }
                   alt={getUserDisplayName(user) || 'User'}
                 />
-                <AvatarFallback className="bg-cyan-500/10 text-cyan-200">
+                <AvatarFallback className="bg-[var(--bg-soft)] text-[var(--text-primary)]">
                   {extractAvatarInitials(user)}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm text-slate-400">Signed in as</p>
-                <p className="font-medium text-white">{getUserDisplayName(user)}</p>
+                <p className="text-sm text-[var(--text-secondary)]">Signed in as</p>
+                <p className="font-medium text-[var(--text-primary)]">{getUserDisplayName(user)}</p>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-4 text-sm text-cyan-100">
-              <div className="flex items-center gap-2 font-medium text-cyan-200">
+            <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-subtle)] p-4 text-sm text-[var(--text-primary)]">
+              <div className="flex items-center gap-2 font-medium text-[var(--text-primary)]">
                 <ShieldCheck className="h-4 w-4" />
                 Verification required
               </div>
-              <p className="mt-2 leading-6 text-cyan-50/90">
+              <p className="mt-2 leading-6 text-[var(--text-secondary)]">
                 A verification link has been sent to your email. Please check your inbox and click
                 the link to confirm your account before continuing.
               </p>
@@ -207,7 +207,7 @@ export default function VerifyEmailPage() {
                 variant="secondary"
                 onClick={resendVerification}
                 disabled={sending}
-                className="flex-1 border-white/10 bg-white/5 text-white hover:bg-white/10"
+                className="flex-1 border-[var(--border-default)] bg-[rgba(255,255,255,0.7)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${sending ? 'animate-spin' : ''}`} />
                 {sending ? 'Sending...' : 'Resend email'}
@@ -216,14 +216,14 @@ export default function VerifyEmailPage() {
                 variant="default"
                 onClick={checkVerification}
                 disabled={checking}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_16px_40px_rgba(34,211,238,0.35)]"
+                className="flex-1 bg-[var(--button-bg)] text-[var(--button-text)] shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
               >
                 {checking ? 'Checking...' : 'Check status'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
 
-            <p className="text-sm leading-6 text-slate-400">
+            <p className="text-sm leading-6 text-[var(--text-secondary)]">
               After verification, you will be redirected automatically to continue building your AI
               workflows.
             </p>

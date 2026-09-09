@@ -535,9 +535,8 @@ export function NodeManagement({
             padding: '16px',
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.borderColor = '#667eea';
-            (e.currentTarget as HTMLElement).style.boxShadow =
-              '0 0 0 2px rgba(102, 126, 234, 0.05)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)';
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 2px rgba(17, 24, 39, 0.03)';
           }}
           onMouseLeave={e => {
             (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
@@ -680,18 +679,17 @@ export function NodeManagement({
                       padding: '8px 10px',
                       borderRadius: '10px',
                       transition: 'all 0.2s ease',
-                      background: isChecked ? 'rgba(102, 126, 234, 0.05)' : 'transparent',
+                      background: isChecked ? 'rgba(17,24,39,0.03)' : 'transparent',
                       border: isChecked
-                        ? '1px solid rgba(102, 126, 234, 0.2)'
+                        ? '1px solid var(--border-default)'
                         : '1px solid transparent',
                     }}
                     onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.background =
-                        'rgba(102, 126, 234, 0.03)';
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(17,24,39,0.02)';
                     }}
                     onMouseLeave={e => {
                       (e.currentTarget as HTMLElement).style.background = isChecked
-                        ? 'rgba(102, 126, 234, 0.05)'
+                        ? 'rgba(17,24,39,0.03)'
                         : 'transparent';
                     }}
                   >
@@ -3095,11 +3093,11 @@ export function NodeManagement({
     <>
       {activeSection === 'builder' && showNodePalette && (
         <aside
-          className="fixed z-50 h-[calc(100%-5rem)] w-96 max-w-[28rem] overflow-y-auto rounded-2xl border border-blue-300/50 bg-white/95 p-6 shadow-2xl backdrop-blur-xl dark:border-blue-500/30 dark:bg-slate-900/95"
+          className="fixed z-50 h-[calc(100%-5rem)] w-96 max-w-[28rem] overflow-y-auto rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-6 shadow-[0_12px_24px_var(--shadow-soft)]"
           style={{ left: nodePalettePosition.x, top: nodePalettePosition.y }}
         >
           <div
-            className="mb-6 flex cursor-grab items-center justify-between rounded-xl p-3 hover:bg-blue-50/40 dark:hover:bg-slate-800/50 bg-gradient-to-r from-blue-50/30 to-indigo-50/30 dark:from-slate-800/30 dark:to-slate-700/30"
+            className="mb-6 flex cursor-grab items-center justify-between rounded-xl p-3 hover:bg-[var(--bg-hover)] border border-[var(--border-default)] bg-[var(--bg-subtle)]"
             onMouseDown={event => {
               event.preventDefault();
               setDraggingPane('palette');
@@ -3111,14 +3109,12 @@ export function NodeManagement({
             onMouseUp={() => setDraggingPane(null)}
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                <Zap className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                <Zap className="w-4 h-4 text-[var(--text-primary)]" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                  Node Palette
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <h3 className="text-lg font-semibold text-[var(--text-primary)]">Node Palette</h3>
+                <p className="text-xs text-[var(--text-secondary)]">
                   Drag nodes to build your workflow
                 </p>
               </div>
@@ -3150,7 +3146,7 @@ export function NodeManagement({
                 placeholder="Search nodes..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200/60 bg-gradient-to-r from-white/90 to-slate-50/80 text-slate-800 placeholder-slate-400 focus:border-blue-400/80 focus:bg-white/95 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all duration-300 dark:border-slate-700/60 dark:bg-gradient-to-r dark:from-slate-900/90 dark:to-slate-800/80 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500/80 dark:focus:bg-slate-900/95 dark:focus:ring-blue-500/20 backdrop-blur-sm shadow-sm focus:shadow-lg"
+                className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--border-strong)] focus:outline-none transition-all duration-200"
               />
             </div>
           </div>
@@ -3159,11 +3155,11 @@ export function NodeManagement({
             {Object.entries(groupedNodeTypes).map(([category, categoryNodes]) => (
               <section
                 key={category}
-                className="rounded-2xl bg-gradient-to-br from-white/90 via-slate-50/80 to-blue-50/40 p-5 dark:from-slate-800/90 dark:via-slate-700/80 dark:to-slate-600/40 border border-slate-200/50 dark:border-slate-600/50 shadow-sm hover:shadow-md transition-all duration-300 backdrop-blur-sm"
+                className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-subtle)] p-5 shadow-[0_6px_14px_var(--shadow-soft)] transition-all duration-200"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 shadow-sm"></div>
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  <div className="w-2 h-2 rounded-full bg-[var(--text-primary)] opacity-70"></div>
+                  <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-primary)]">
                     {category}
                   </h4>
                   <div className="ml-auto px-2 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100/60 dark:bg-slate-700/60 rounded-full border border-slate-200/40 dark:border-slate-600/40">
@@ -3196,25 +3192,22 @@ export function NodeManagement({
                           };
                           setNodes([...nodes, newNode]);
                         }}
-                        className="group w-full rounded-xl border border-slate-200/60 bg-gradient-to-r from-white/80 to-slate-50/60 p-4 text-left text-sm text-slate-800 transition-all duration-300 hover:border-blue-400/70 hover:bg-gradient-to-r hover:from-blue-50/90 hover:to-indigo-50/80 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 dark:border-slate-700/60 dark:bg-gradient-to-r dark:from-slate-900/80 dark:to-slate-800/60 dark:text-slate-100 dark:hover:border-blue-500/70 dark:hover:from-blue-950/90 dark:hover:to-indigo-950/80 flex items-center gap-4 backdrop-blur-sm"
+                        className="group w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 text-left text-sm text-[var(--text-primary)] transition-all duration-200 hover:border-[var(--border-strong)] hover:bg-[var(--bg-hover)] flex items-center gap-4"
                       >
-                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 dark:from-slate-700 dark:via-slate-600 dark:to-slate-500 flex items-center justify-center shadow-md group-hover:shadow-xl group-hover:scale-110 transition-all duration-300 border border-white/50 dark:border-slate-600/50">
-                          {renderIcon(
-                            node.icon,
-                            'w-10 h-10 text-blue-700 dark:text-blue-300 drop-shadow-sm'
-                          )}
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                          {renderIcon(node.icon, 'w-10 h-10 text-[var(--text-secondary)]')}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-slate-900 dark:text-slate-100 truncate text-base group-hover:text-blue-900 dark:group-hover:text-blue-100 transition-colors duration-200">
+                          <div className="font-semibold text-[var(--text-primary)] truncate text-base">
                             {node.label}
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium uppercase tracking-wide">
+                          <div className="text-xs text-[var(--text-tertiary)] mt-1 font-medium uppercase tracking-wide">
                             {node.category}
                           </div>
                         </div>
-                        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-                            <Plus className="w-4 h-4 text-white" />
+                        <div className="flex-shrink-0 opacity-70 transition-all duration-200">
+                          <div className="w-8 h-8 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center">
+                            <Plus className="w-4 h-4 text-[var(--text-primary)]" />
                           </div>
                         </div>
                       </button>
@@ -3228,7 +3221,7 @@ export function NodeManagement({
 
       {activeSection === 'settings' && (
         <aside
-          className="fixed z-50 h-[calc(100%-5rem)] w-96 max-w-[28rem] overflow-y-auto rounded-2xl border border-blue-300/50 bg-white/90 p-4 shadow-2xl backdrop-blur-xl dark:border-blue-500/30 dark:bg-slate-900/90"
+          className="fixed z-50 h-[calc(100%-5rem)] w-96 max-w-[28rem] overflow-y-auto rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 shadow-[0_12px_24px_var(--shadow-soft)]"
           style={{ left: settingsPosition.x, top: settingsPosition.y }}
         >
           <div
@@ -3317,7 +3310,7 @@ export function NodeManagement({
             <Button
               size="sm"
               onClick={saveApiKeys}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full border border-[var(--border-default)] bg-[var(--bg-soft)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
             >
               Save Keys
             </Button>
@@ -3332,11 +3325,11 @@ export function NodeManagement({
             onClick={() => selectNode(undefined)}
           />
           <aside
-            className="fixed z-50 h-[calc(100%-5rem)] w-96 max-w-[28rem] rounded-2xl border border-purple-300/50 bg-white/95 p-4 shadow-2xl backdrop-blur-xl dark:border-purple-500/30 dark:bg-slate-900/95"
+            className="node-config-panel fixed z-50 h-[calc(100%-5rem)] w-96 max-w-[28rem] rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 shadow-[0_12px_24px_var(--shadow-soft)]"
             style={{ left: nodeConfigPosition.x, top: nodeConfigPosition.y, overflow: 'visible' }}
           >
             <div
-              className="mb-4 flex cursor-grab items-center justify-between rounded-lg p-2 hover:bg-purple-50/40 dark:hover:bg-purple-900/20"
+              className="mb-4 flex cursor-grab items-center justify-between rounded-lg p-2 hover:bg-[var(--bg-hover)]"
               onMouseDown={event => {
                 event.preventDefault();
                 setDraggingPane('nodeConfig');
@@ -3348,8 +3341,8 @@ export function NodeManagement({
               onMouseUp={() => setDraggingPane(null)}
             >
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
-                <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
+                <div className="w-3 h-3 bg-[var(--text-primary)] rounded-full opacity-70"></div>
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">
                   Node Configuration
                 </h3>
               </div>
@@ -3363,13 +3356,13 @@ export function NodeManagement({
 
             <div className="space-y-4 overflow-y-auto max-h-[calc(100%-60px)] pr-2">
               {/* Node Label Section */}
-              <div className="rounded-[14px] border-2 border-slate-200/70 bg-slate-50/90 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/90">
+              <div className="rounded-[14px] border border-[var(--border-default)] bg-[var(--bg-subtle)] p-4 shadow-[0_8px_18px_var(--shadow-soft)]">
                 <label
                   htmlFor="node-label"
                   style={{
                     fontSize: '12px',
                     fontWeight: 700,
-                    color: 'var(--color-foreground)',
+                    color: 'var(--text-primary)',
                     marginBottom: '8px',
                     display: 'block',
                     textTransform: 'uppercase',
@@ -3390,13 +3383,13 @@ export function NodeManagement({
                       )
                     );
                   }}
-                  className="w-full bg-white/80 dark:bg-slate-800/80 border-purple-300 dark:border-purple-600 focus:border-purple-500 focus:ring-purple-500 transition-all duration-200"
+                  className="w-full bg-[var(--bg-subtle)] border-[var(--border-default)] text-[var(--text-primary)] focus:border-[var(--border-strong)] transition-all duration-200"
                   placeholder="Give your node a clear, descriptive name..."
                 />
               </div>
 
               {/* Configuration Section */}
-              <div className="rounded-[14px] border-2 border-sky-200/70 bg-slate-50/90 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/90">
+              <div className="rounded-[14px] border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 shadow-[0_6px_14px_var(--shadow-soft)]">
                 <div
                   style={{
                     display: 'flex',
@@ -3417,8 +3410,9 @@ export function NodeManagement({
                     >
                       <Badge
                         style={{
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          color: '#fff',
+                          background: 'var(--bg-subtle)',
+                          color: 'var(--text-primary)',
+                          border: '1px solid var(--border-default)',
                           fontSize: '11px',
                           fontWeight: 700,
                           padding: '4px 10px',
@@ -3431,7 +3425,7 @@ export function NodeManagement({
                         style={{
                           fontSize: '11px',
                           fontWeight: 600,
-                          color: isNodeConfigured(selectedNode) ? '#10b981' : '#ef4444',
+                          color: 'var(--text-secondary)',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '4px',
@@ -3442,7 +3436,7 @@ export function NodeManagement({
                             width: '8px',
                             height: '8px',
                             borderRadius: '50%',
-                            background: isNodeConfigured(selectedNode) ? '#10b981' : '#ef4444',
+                            background: 'var(--text-tertiary)',
                             display: 'inline-block',
                           }}
                         />
@@ -3467,7 +3461,7 @@ export function NodeManagement({
               </div>
 
               {/* Node Info Section */}
-              <div className="rounded-[14px] border-2 border-emerald-200/70 bg-slate-50/90 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/90">
+              <div className="rounded-[14px] border border-[var(--border-default)] bg-[var(--bg-subtle)] p-4 shadow-[0_8px_18px_var(--shadow-soft)]">
                 <div
                   style={{
                     display: 'flex',
@@ -3481,7 +3475,7 @@ export function NodeManagement({
                       width: '8px',
                       height: '8px',
                       borderRadius: '50%',
-                      background: '#10b981',
+                      background: 'var(--text-tertiary)',
                     }}
                   />
                   <span
@@ -3512,7 +3506,11 @@ export function NodeManagement({
                       ID:
                     </strong>
                     <span
-                      style={{ fontFamily: 'var(--font-mono)', color: '#667eea', fontWeight: 600 }}
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--text-secondary)',
+                        fontWeight: 600,
+                      }}
                     >
                       {selectedNode.id}
                     </span>
@@ -3523,7 +3521,11 @@ export function NodeManagement({
                       Type:
                     </strong>
                     <span
-                      style={{ fontFamily: 'var(--font-mono)', color: '#667eea', fontWeight: 600 }}
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--text-secondary)',
+                        fontWeight: 600,
+                      }}
                     >
                       {selectedNode.type}
                     </span>
@@ -3534,7 +3536,11 @@ export function NodeManagement({
                       Position:
                     </strong>
                     <span
-                      style={{ fontFamily: 'var(--font-mono)', color: '#667eea', fontWeight: 600 }}
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--text-secondary)',
+                        fontWeight: 600,
+                      }}
                     >
                       ({Math.round(selectedNode.position?.x ?? 0)},{' '}
                       {Math.round(selectedNode.position?.y ?? 0)})
@@ -3549,7 +3555,7 @@ export function NodeManagement({
 
       {contextMenu.type && (
         <div
-          className="fixed z-50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 rounded-2xl shadow-2xl p-2 min-w-56"
+          className="fixed z-50 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl shadow-[0_18px_38px_var(--shadow-soft)] p-2 min-w-56"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onMouseLeave={() => setContextMenu({ type: null, x: 0, y: 0 })}
         >
@@ -3559,23 +3565,23 @@ export function NodeManagement({
                 Node Actions
               </div>
               <button
-                className="w-full text-left px-3 py-3 text-sm hover:bg-blue-50/70 dark:hover:bg-blue-900/20 rounded-xl transition-all duration-200 transform hover:scale-105 flex items-center gap-3"
+                className="w-full text-left px-3 py-3 text-sm hover:bg-[var(--bg-hover)] rounded-xl transition-all duration-200 transform hover:scale-105 flex items-center gap-3"
                 onClick={() => {
                   if (contextMenu.id) duplicateNode(contextMenu.id);
                   setContextMenu({ type: null, x: 0, y: 0 });
                 }}
               >
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-[var(--text-primary)] rounded-full"></div>
                 <span>Duplicate Node</span>
               </button>
               <button
-                className="w-full text-left px-3 py-3 text-sm hover:bg-slate-50/70 dark:hover:bg-slate-700/50 rounded-xl transition-all duration-200 transform hover:scale-105 flex items-center gap-3"
+                className="w-full text-left px-3 py-3 text-sm hover:bg-[var(--bg-hover)] rounded-xl transition-all duration-200 transform hover:scale-105 flex items-center gap-3"
                 onClick={() => {
                   if (contextMenu.data?.config) copyConfig(contextMenu.data.config);
                   setContextMenu({ type: null, x: 0, y: 0 });
                 }}
               >
-                <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full"></div>
                 <span>Copy Config</span>
               </button>
               <div className="border-t border-slate-200/50 dark:border-slate-700/50 my-2"></div>

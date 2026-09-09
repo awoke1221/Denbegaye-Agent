@@ -4,6 +4,8 @@ import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { SiteHeader } from '@/components/site-header';
+import { SiteFooter } from '@/components/site-footer';
 import { Toaster } from '@/components/ui/toaster';
 
 // const _geist = Geist({ subsets: ["latin"] });
@@ -40,7 +42,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
         <meta name="color-scheme" content="dark light" />
       </head>
-      <body className={`font-sans antialiased`}>
+      <body className="min-h-screen bg-[var(--bg-page)] font-sans text-[var(--text-primary)] antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -48,7 +50,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
+            <div className="relative min-h-screen">
+              <SiteHeader />
+              <div className="relative z-0">{children}</div>
+              <SiteFooter />
+            </div>
             <Toaster />
           </AuthProvider>
         </ThemeProvider>

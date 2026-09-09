@@ -220,25 +220,25 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#020817] text-slate-100">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.14),transparent_28%)]" />
-      <div className="pointer-events-none absolute right-8 top-20 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-8 left-12 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden bg-[var(--bg-page)] text-[var(--text-primary)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(17,24,39,0.04),transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(17,24,39,0.03),transparent_28%)]" />
+      <div className="pointer-events-none absolute right-8 top-20 h-72 w-72 rounded-full bg-[rgba(17,24,39,0.03)] blur-3xl" />
+      <div className="pointer-events-none absolute bottom-8 left-12 h-64 w-64 rounded-full bg-[rgba(17,24,39,0.04)] blur-3xl" />
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10">
-        <div className="grid w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/75 shadow-[0_40px_120px_rgba(15,23,42,0.9)] backdrop-blur-xl lg:grid-cols-[1.15fr_0.95fr]">
-          <div className="flex flex-col justify-between bg-slate-950/80 px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
+        <div className="grid w-full overflow-hidden rounded-[2rem] border border-[var(--border-default)] bg-[rgba(255,255,255,0.8)] shadow-[0_40px_120px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:grid-cols-[1.15fr_0.95fr]">
+          <div className="flex flex-col justify-between bg-[rgba(255,255,255,0.72)] px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
                 <Sparkles className="h-3.5 w-3.5" />
                 New workspace
               </div>
 
               <div className="space-y-5">
-                <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                <h1 className="text-4xl font-black tracking-tight text-[var(--text-primary)] sm:text-5xl">
                   Create your account
                 </h1>
-                <p className="max-w-lg text-base leading-7 text-slate-300 sm:text-lg">
+                <p className="max-w-lg text-base leading-7 text-[var(--text-secondary)] sm:text-lg">
                   Start building AI-powered automations with secure workflows, templates, and a
                   collaborative system that scales with your business.
                 </p>
@@ -246,42 +246,46 @@ export default function SignupPage() {
             </div>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300">
+              <div className="rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.6)] p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--bg-soft)] text-[var(--text-primary)]">
                   <Bot className="h-5 w-5" />
                 </div>
-                <p className="text-base font-semibold text-white">Save workflows</p>
-                <p className="mt-2 text-sm text-slate-300">Keep every automation in one place</p>
+                <p className="text-base font-semibold text-[var(--text-primary)]">Save workflows</p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                  Keep every automation in one place
+                </p>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
+              <div className="rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.6)] p-4">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--bg-soft)] text-[var(--text-primary)]">
                   <Zap className="h-5 w-5" />
                 </div>
-                <p className="text-base font-semibold text-white">Launch fast</p>
-                <p className="mt-2 text-sm text-slate-300">
+                <p className="text-base font-semibold text-[var(--text-primary)]">Launch fast</p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
                   Move from idea to execution in minutes
                 </p>
               </div>
             </div>
 
-            <div className="mt-8 flex items-center gap-2 text-sm text-slate-300">
-              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            <div className="mt-8 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+              <ShieldCheck className="h-4 w-4 text-[var(--text-primary)]" />
               Protected by secure email verification and strong password policies
             </div>
           </div>
 
-          <Card className="border-0 bg-slate-900/90 shadow-none">
+          <Card className="border-0 bg-[rgba(255,255,255,0.9)] shadow-none">
             <CardHeader className="px-6 pb-4 pt-7 sm:px-8">
-              <CardTitle className="text-3xl font-bold text-white">Start free</CardTitle>
-              <CardDescription className="mt-2 text-slate-400">
+              <CardTitle className="text-3xl font-bold text-[var(--text-primary)]">
+                Start free
+              </CardTitle>
+              <CardDescription className="mt-2 text-[var(--text-secondary)]">
                 One account for your agents, workflows, and automation tools.
               </CardDescription>
             </CardHeader>
             <CardContent className="px-6 pb-8 sm:px-8">
               <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
                 {isAuthInitializing ? (
-                  <div className="rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm text-slate-300">
+                  <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-subtle)] px-4 py-3 text-sm text-[var(--text-secondary)]">
                     Checking your authentication state. If you are already signed in, you will be
                     redirected shortly.
                   </div>
@@ -320,9 +324,9 @@ export default function SignupPage() {
 
                 <div className="relative">
                   <div className="absolute inset-x-0 top-1/2 flex items-center">
-                    <span className="mx-auto h-px w-full max-w-xs bg-slate-700" />
+                    <span className="mx-auto h-px w-full max-w-xs bg-[var(--border-default)]" />
                   </div>
-                  <div className="relative z-10 mx-auto w-fit rounded-full bg-slate-900 px-3 text-[10px] font-medium uppercase tracking-[0.25em] text-slate-400">
+                  <div className="relative z-10 mx-auto w-fit rounded-full bg-[var(--bg-subtle)] px-3 text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--text-tertiary)]">
                     Or sign up with email
                   </div>
                 </div>
@@ -352,7 +356,7 @@ export default function SignupPage() {
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-slate-200">
+                    <Label htmlFor="email" className="text-[var(--text-primary)]">
                       Email address
                     </Label>
                     <Input
@@ -361,7 +365,7 @@ export default function SignupPage() {
                       placeholder="name@example.com"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      className="border-slate-700 bg-slate-950/90 text-white placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] disabled:cursor-not-allowed disabled:opacity-60"
                       required
                       disabled={loading || isCoolingDown}
                       aria-invalid={!!(email.length > 0 && !isEmailValid)}
@@ -372,7 +376,7 @@ export default function SignupPage() {
                       }
                     />
                     {email.length > 0 && !isEmailValid && (
-                      <p id="email-error" role="alert" className="text-sm text-rose-300">
+                      <p id="email-error" role="alert" className="text-sm text-red-600">
                         {emailValidationMessage ??
                           'Please enter a valid email address like name@example.com.'}
                       </p>
@@ -418,18 +422,26 @@ export default function SignupPage() {
                 <div
                   id="password-requirements"
                   aria-live="polite"
-                  className="rounded-3xl border border-slate-800 bg-slate-950/90 p-4 text-sm text-slate-300"
+                  className="rounded-3xl border border-[var(--border-default)] bg-[var(--bg-subtle)] p-4 text-sm text-[var(--text-secondary)]"
                 >
-                  <p className="mb-3 font-semibold text-slate-100">Password requirements</p>
+                  <p className="mb-3 font-semibold text-[var(--text-primary)]">
+                    Password requirements
+                  </p>
                   <div className="space-y-3">
                     {passwordValidation.requirements.map(requirement => (
                       <div key={requirement.key} className="flex items-center gap-3">
                         {requirement.met ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                         ) : (
-                          <XCircle className="h-4 w-4 text-rose-400" />
+                          <XCircle className="h-4 w-4 text-red-500" />
                         )}
-                        <span className={requirement.met ? 'text-slate-200' : 'text-slate-400'}>
+                        <span
+                          className={
+                            requirement.met
+                              ? 'text-[var(--text-primary)]'
+                              : 'text-[var(--text-tertiary)]'
+                          }
+                        >
                           {requirement.label}
                         </span>
                       </div>
@@ -458,11 +470,11 @@ export default function SignupPage() {
                   )}
                 </Button>
 
-                <p className="text-center text-sm text-slate-400">
+                <p className="text-center text-sm text-[var(--text-secondary)]">
                   Already have an account?{' '}
                   <Link
                     href="/login"
-                    className="font-medium text-cyan-300 transition hover:text-cyan-200"
+                    className="font-medium text-[var(--text-primary)] transition hover:text-[var(--text-secondary)]"
                   >
                     Sign in
                   </Link>

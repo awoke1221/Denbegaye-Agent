@@ -113,10 +113,10 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#020817] text-slate-200">
+      <main className="flex min-h-screen items-center justify-center bg-[var(--bg-page)] text-[var(--text-primary)]">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent" />
-          <p className="text-sm">Preparing your secure checkout...</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--border-strong)] border-t-[var(--button-bg)]" />
+          <p className="text-sm text-[var(--text-secondary)]">Preparing your secure checkout...</p>
         </div>
       </main>
     );
@@ -124,9 +124,11 @@ export default function CheckoutPage() {
 
   if (!plan) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#020817] px-4 text-white">
-        <div className="w-full max-w-md rounded-3xl border border-red-400/20 bg-slate-900/90 p-8 text-center shadow-2xl">
-          <p className="text-red-200">{errorMessage || 'Unable to load this plan.'}</p>
+      <main className="flex min-h-screen items-center justify-center bg-[var(--bg-page)] px-4 text-[var(--text-primary)]">
+        <div className="w-full max-w-md rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.72)] p-8 text-center shadow-[0_28px_80px_rgba(15,23,42,0.06)]">
+          <p className="text-[var(--text-secondary)]">
+            {errorMessage || 'Unable to load this plan.'}
+          </p>
           <Button className="mt-6" onClick={() => router.push('/pricing')}>
             Return to pricing
           </Button>
@@ -136,61 +138,68 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#020817] text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.14),transparent_30%)]" />
+    <main className="relative min-h-screen overflow-hidden bg-[var(--bg-page)] text-[var(--text-primary)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(17,24,39,0.04),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(17,24,39,0.03),transparent_30%)]" />
       <div className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-14">
         <button
           type="button"
           onClick={() => router.push('/pricing')}
-          className="mb-10 inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+          className="mb-10 inline-flex items-center gap-2 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to plans
         </button>
 
         <div className="mb-10 max-w-2xl">
-          <Badge className="border border-cyan-400/20 bg-cyan-400/10 text-cyan-200">
+          <Badge className="border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-secondary)]">
             <LockKeyhole className="mr-2 h-3.5 w-3.5" /> Secure checkout
           </Badge>
-          <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">Review your plan</h1>
-          <p className="mt-4 text-slate-300">
+          <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl text-[var(--text-primary)]">
+            Review your plan
+          </h1>
+          <p className="mt-4 text-[var(--text-secondary)]">
             Confirm your subscription details before continuing to PayPal. Your access begins after
             the payment is approved.
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <section className="rounded-[2rem] border border-white/10 bg-slate-900/75 p-6 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-8">
-            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-7">
+          <section className="rounded-[2rem] border border-[var(--border-default)] bg-[rgba(255,255,255,0.7)] p-6 shadow-[0_28px_80px_rgba(15,23,42,0.05)] backdrop-blur-xl sm:p-8">
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--border-default)] pb-7">
               <div>
-                <div className="mb-3 flex items-center gap-2 text-sm uppercase tracking-[0.2em] text-cyan-300">
+                <div className="mb-3 flex items-center gap-2 text-sm uppercase tracking-[0.2em] text-[var(--text-secondary)]">
                   <Sparkles className="h-4 w-4" /> {plan.tier} plan
                 </div>
-                <h2 className="text-3xl font-bold">{plan.name}</h2>
-                <p className="mt-2 max-w-lg text-slate-400">{plan.description}</p>
+                <h2 className="text-3xl font-bold text-[var(--text-primary)]">{plan.name}</h2>
+                <p className="mt-2 max-w-lg text-[var(--text-secondary)]">{plan.description}</p>
               </div>
-              <ShieldCheck className="h-8 w-8 shrink-0 text-emerald-400" />
+              <ShieldCheck className="h-8 w-8 shrink-0 text-[var(--text-primary)]" />
             </div>
 
-            <div className="grid gap-4 border-b border-white/10 py-7 sm:grid-cols-2">
+            <div className="grid gap-4 border-b border-[var(--border-default)] py-7 sm:grid-cols-2">
               <div>
-                <p className="text-sm text-slate-400">Billing cycle</p>
-                <p className="mt-2 text-lg font-semibold capitalize">{billingCycle}</p>
+                <p className="text-sm text-[var(--text-secondary)]">Billing cycle</p>
+                <p className="mt-2 text-lg font-semibold capitalize text-[var(--text-primary)]">
+                  {billingCycle}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Renewal</p>
-                <p className="mt-2 text-lg font-semibold">
+                <p className="text-sm text-[var(--text-secondary)]">Renewal</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
                   {billingCycle === 'yearly' ? 'Every 12 months' : 'Every month'}
                 </p>
               </div>
             </div>
 
             <div className="pt-7">
-              <h3 className="font-semibold">What is included</h3>
+              <h3 className="font-semibold text-[var(--text-primary)]">What is included</h3>
               <ul className="mt-5 grid gap-3 sm:grid-cols-2">
                 {plan.features.map(feature => (
-                  <li key={feature} className="flex items-start gap-3 text-sm text-slate-300">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300">
+                  <li
+                    key={feature}
+                    className="flex items-start gap-3 text-sm text-[var(--text-secondary)]"
+                  >
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--bg-soft)] text-[var(--text-primary)]">
                       <Check className="h-3 w-3" />
                     </span>
                     {feature}
@@ -200,26 +209,30 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          <aside className="h-fit rounded-[2rem] border border-cyan-300/20 bg-gradient-to-b from-cyan-400/10 to-slate-900/90 p-6 shadow-2xl shadow-cyan-950/30 sm:p-8">
-            <p className="text-sm font-medium text-slate-300">Order summary</p>
+          <aside className="h-fit rounded-[2rem] border border-[var(--border-default)] bg-[rgba(255,255,255,0.74)] p-6 shadow-[0_28px_80px_rgba(15,23,42,0.05)] sm:p-8">
+            <p className="text-sm font-medium text-[var(--text-secondary)]">Order summary</p>
             <div className="mt-6 flex items-end justify-between gap-4">
-              <span className="text-slate-300">{plan.name} subscription</span>
-              <span className="text-3xl font-black">${price.toFixed(2)}</span>
+              <span className="text-[var(--text-secondary)]">{plan.name} subscription</span>
+              <span className="text-3xl font-black text-[var(--text-primary)]">
+                ${price.toFixed(2)}
+              </span>
             </div>
-            <p className="mt-2 text-right text-sm text-slate-400">
+            <p className="mt-2 text-right text-sm text-[var(--text-secondary)]">
               USD / {billingCycle === 'yearly' ? 'year' : 'month'}
             </p>
 
             {billingCycle === 'yearly' && (
-              <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-200">
+              <div className="mt-5 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-subtle)] p-4 text-sm text-[var(--text-primary)]">
                 Annual billing averages ${monthlyEquivalent.toFixed(2)} per month.
               </div>
             )}
 
-            <div className="my-7 border-t border-white/10 pt-5 text-sm text-slate-400">
+            <div className="my-7 border-t border-[var(--border-default)] pt-5 text-sm text-[var(--text-secondary)]">
               <div className="flex justify-between">
                 <span>Due today</span>
-                <span className="font-semibold text-white">${price.toFixed(2)} USD</span>
+                <span className="font-semibold text-[var(--text-primary)]">
+                  ${price.toFixed(2)} USD
+                </span>
               </div>
               <p className="mt-4 leading-6">
                 You will review and approve the payment securely on PayPal. We do not store your
@@ -228,7 +241,7 @@ export default function CheckoutPage() {
             </div>
 
             {errorMessage && (
-              <p className="mb-4 rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-sm text-red-200">
+              <p className="mb-4 rounded-xl border border-[var(--border-default)] bg-[var(--bg-soft)] p-3 text-sm text-[var(--text-primary)]">
                 {errorMessage}
               </p>
             )}
@@ -236,12 +249,12 @@ export default function CheckoutPage() {
             <Button
               onClick={startPayPalCheckout}
               disabled={processing}
-              className="h-12 w-full bg-[#ffc439] font-bold text-[#111827] hover:bg-[#f4b51f]"
+              className="h-12 w-full bg-[var(--button-bg)] font-bold text-[var(--button-text)] hover:bg-[var(--accent-strong)]"
             >
               {processing ? 'Connecting to PayPal...' : 'Continue to PayPal'}
               {!processing && <ExternalLink className="ml-2 h-4 w-4" />}
             </Button>
-            <p className="mt-4 text-center text-xs leading-5 text-slate-500">
+            <p className="mt-4 text-center text-xs leading-5 text-[var(--text-tertiary)]">
               Secure payment processing by PayPal. Subscription access is activated only after
               verified payment.
             </p>

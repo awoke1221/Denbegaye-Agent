@@ -97,42 +97,46 @@ export default function PaymentResultPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-3xl rounded-3xl border border-white/10 bg-slate-900/90 p-10 shadow-2xl shadow-black/40">
+    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-3xl rounded-3xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.76)] p-10 shadow-[0_28px_80px_rgba(15,23,42,0.06)]">
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-4">
             {success ? (
-              <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+              <CheckCircle2 className="w-12 h-12 text-[var(--text-primary)]" />
             ) : failed ? (
-              <AlertCircle className="w-12 h-12 text-red-400" />
+              <AlertCircle className="w-12 h-12 text-[var(--text-secondary)]" />
             ) : (
-              <RefreshCw className="w-12 h-12 animate-spin text-sky-400" />
+              <RefreshCw className="w-12 h-12 animate-spin text-[var(--text-secondary)]" />
             )}
             <div>
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-3xl font-bold text-[var(--text-primary)]">
                 {success ? 'Payment Result' : failed ? 'Payment Failed' : 'Payment Status'}
               </h1>
-              <p className="text-sm text-gray-400">{statusMessage}</p>
+              <p className="text-sm text-[var(--text-secondary)]">{statusMessage}</p>
             </div>
           </div>
 
           {paymentStatus && (
-            <div className="rounded-2xl border border-white/10 bg-slate-950/80 p-6">
-              <p className="text-sm text-gray-400 mb-2">Transaction status</p>
-              <Badge className="bg-emerald-500/10 text-emerald-300 border-emerald-500/20">
+            <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-subtle)] p-6">
+              <p className="text-sm text-[var(--text-secondary)] mb-2">Transaction status</p>
+              <Badge className="bg-[var(--bg-soft)] text-[var(--text-primary)] border-[var(--border-default)]">
                 {paymentStatus}
               </Badge>
             </div>
           )}
 
           {errorMessage && (
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-6 text-red-200">
+            <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-soft)] p-6 text-[var(--text-primary)]">
               <p className="font-medium">{errorMessage}</p>
             </div>
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Button variant="secondary" onClick={handleGoBack}>
+            <Button
+              variant="secondary"
+              onClick={handleGoBack}
+              className="border-[var(--border-default)] bg-[rgba(255,255,255,0.7)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Pricing
             </Button>
@@ -144,6 +148,7 @@ export default function PaymentResultPage() {
                   router.push('/pricing');
                 }
               }}
+              className="bg-[var(--button-bg)] text-[var(--button-text)] hover:bg-[var(--accent-strong)]"
             >
               {success ? 'Re-check Payment' : 'Try Again'}
             </Button>
