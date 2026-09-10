@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 
 const footerLinks = {
   Platform: [
@@ -50,14 +49,6 @@ export function SiteFooter() {
               Build, automate, and scale AI growth workflows with a platform designed for creative
               teams and product operators.
             </p>
-
-            <Link
-              href="/signup"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--button-bg)] px-4 py-2.5 text-sm font-medium text-[var(--button-text)] shadow-[0_12px_28px_rgba(15,23,42,0.08)] transition hover:opacity-95"
-            >
-              Start building
-              <ArrowRight className="h-4 w-4" />
-            </Link>
           </div>
 
           {Object.entries(footerLinks).map(([group, links]) => (
