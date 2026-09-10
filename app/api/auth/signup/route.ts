@@ -93,16 +93,24 @@ export async function POST(request: Request) {
 
     if (!resendResponse.ok) {
       const resendError = await resendResponse.text();
+      let resendMessage = '';
+      try {
+        resendMessage = JSON.parse(resendError).message || '';
+      } catch {
+        resendMessage = resendError;
+      }
       console.error('Resend confirmation delivery failed:', {
         status: resendResponse.status,
-        response: resendError.slice(0, 500),
+        message: resendMessage.slice(0, 500),
         sender,
       });
       await supabaseAdmin.auth.admin.deleteUser(created.user.id);
       return jsonError(
         resendResponse.status === 401 || resendResponse.status === 403
           ? 'Email provider authorization failed. Check the Resend API key.'
-          : 'Resend rejected the email. Check that the sender domain is verified and the recipient address is valid.',
+          : /testing email|test mode|example\.com|recipient/i.test(resendMessage)
+            ? 'Resend is currently limiting recipients. Use a real email address and enable production sending in your Resend account.'
+            : 'Resend rejected the email. Check that the sender domain is verified and the recipient address is valid.',
         502
       );
     }

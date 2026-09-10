@@ -42,7 +42,22 @@ export async function POST(request: Request) {
     });
 
     if (!resendResponse.ok) {
-      return NextResponse.json({ error: 'Unable to send confirmation email.' }, { status: 502 });
+      const resendError = await resendResponse.text();
+      let resendMessage = '';
+      try {
+        resendMessage = JSON.parse(resendError).message || '';
+      } catch {
+        resendMessage = resendError;
+      }
+
+      return NextResponse.json(
+        {
+          error: /testing email|test mode|example\.com|recipient/i.test(resendMessage)
+            ? 'Resend is currently limiting recipients. Use a real email address and enable production sending in your Resend account.'
+            : 'Unable to send confirmation email. Please check the recipient address.',
+        },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({ sent: true });
