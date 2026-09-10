@@ -68,8 +68,16 @@ export async function POST(request: Request) {
     });
 
     if (linkError || !linkData.properties?.action_link) {
+      console.error('Signup confirmation link generation failed:', {
+        message: linkError?.message,
+        status: linkError?.status,
+        redirectTo: `${appUrl}/auth/callback`,
+      });
       await supabaseAdmin.auth.admin.deleteUser(created.user.id);
-      return jsonError('Unable to prepare your confirmation email. Please try again.', 502);
+      return jsonError(
+        'Unable to prepare your confirmation email. Check the Supabase redirect URL configuration.',
+        502
+      );
     }
 
     const resendResponse = await fetch('https://api.resend.com/emails', {
@@ -84,8 +92,19 @@ export async function POST(request: Request) {
     });
 
     if (!resendResponse.ok) {
+      const resendError = await resendResponse.text();
+      console.error('Resend confirmation delivery failed:', {
+        status: resendResponse.status,
+        response: resendError.slice(0, 500),
+        sender,
+      });
       await supabaseAdmin.auth.admin.deleteUser(created.user.id);
-      return jsonError('Unable to send your confirmation email. Please try again.', 502);
+      return jsonError(
+        resendResponse.status === 401 || resendResponse.status === 403
+          ? 'Email provider authorization failed. Check the Resend API key.'
+          : 'Resend rejected the email. Check that the sender domain is verified and the recipient address is valid.',
+        502
+      );
     }
 
     return NextResponse.json({ user: created.user });
