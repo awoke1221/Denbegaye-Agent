@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,10 +20,11 @@ import {
   Play,
   Search,
   Filter,
+  SlidersHorizontal,
+  ArrowUpDown,
   Grid,
   List,
   ArrowLeft,
-  Cpu,
   Sparkles,
   Plus,
   Zap,
@@ -32,9 +32,16 @@ import {
   Star,
   Clock,
   Users,
-  TrendingUp,
   CheckCircle,
   X,
+  Eye,
+  Bookmark,
+  RotateCcw,
+  Info,
+  GitBranch,
+  UserRound,
+  Tag,
+  Database,
 } from 'lucide-react';
 import { AgentBuilderTemplates } from '@/lib/agentBuilderTemplates';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,6 +60,9 @@ export default function TemplatesPage() {
   const [newWorkflowDescription, setNewWorkflowDescription] = useState('');
   const [dbTemplates, setDbTemplates] = useState<any[]>([]);
   const [loadingDbTemplates, setLoadingDbTemplates] = useState(true);
+  const [sortBy, setSortBy] = useState<'recommended' | 'name' | 'nodes'>('recommended');
+  const [previewTemplate, setPreviewTemplate] = useState<any | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
   // Normalize templates from built-in and database sources into a consistent shape
   const normalizeTemplate = (t: any) => ({
@@ -94,6 +104,34 @@ export default function TemplatesPage() {
 
     return matchesSearch && matchesCategory;
   });
+
+  const sortedTemplates = [...filteredTemplates].sort((first, second) => {
+    if (sortBy === 'name') return first.name.localeCompare(second.name);
+    if (sortBy === 'nodes') return second.nodes.length - first.nodes.length;
+    return (
+      Number(second.featured) - Number(first.featured) || second.nodes.length - first.nodes.length
+    );
+  });
+
+  const featuredTemplates = sortedTemplates.filter(template => template.featured);
+  const categoryCounts = allTemplates.reduce<Record<string, number>>((counts, template) => {
+    counts[template.category] = (counts[template.category] || 0) + 1;
+    return counts;
+  }, {});
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('All');
+    setSortBy('recommended');
+  };
+
+  const toggleFavorite = (templateId: string) => {
+    setFavoriteIds(current =>
+      current.includes(templateId)
+        ? current.filter(id => id !== templateId)
+        : [...current, templateId]
+    );
+  };
 
   const loadTemplate = (template: any) => {
     setLoadingTemplate(template.id);
@@ -175,17 +213,45 @@ export default function TemplatesPage() {
   const getTemplateComplexity = (template: any) => {
     const nodeCount = template.nodes.length;
     if (nodeCount <= 3)
-      return { level: 'Beginner', color: 'bg-green-100 text-green-800', icon: CheckCircle };
+      return {
+        level: 'Beginner',
+        color: 'bg-[var(--bg-soft)] text-[var(--text-secondary)]',
+        icon: CheckCircle,
+      };
     if (nodeCount <= 6)
-      return { level: 'Intermediate', color: 'bg-yellow-100 text-yellow-800', icon: Clock };
-    return { level: 'Advanced', color: 'bg-red-100 text-red-800', icon: Zap };
+      return {
+        level: 'Intermediate',
+        color: 'bg-[var(--bg-soft)] text-[var(--text-secondary)]',
+        icon: Clock,
+      };
+    return {
+      level: 'Advanced',
+      color: 'bg-[var(--bg-soft)] text-[var(--text-secondary)]',
+      icon: Zap,
+    };
   };
+
+  const getTemplateNodeTypes = (template: any) =>
+    Array.from(new Set(template.nodes.map((node: any) => node.type).filter(Boolean))) as string[];
 
   useEffect(() => {
     if (user) {
       fetchDbTemplates();
     }
   }, [user]);
+
+  useEffect(() => {
+    try {
+      const storedFavorites = localStorage.getItem('favorite-template-ids');
+      if (storedFavorites) setFavoriteIds(JSON.parse(storedFavorites));
+    } catch {
+      setFavoriteIds([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('favorite-template-ids', JSON.stringify(favoriteIds));
+  }, [favoriteIds]);
 
   if (loading) {
     return (
@@ -197,31 +263,31 @@ export default function TemplatesPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="page-shell min-h-screen text-[var(--text-primary)]">
         {/* Header */}
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 shadow-sm">
-          <div className="container mx-auto px-6 py-6">
+        <div className="glass-panel border-b border-[var(--border-default)] bg-[rgba(248,246,244,0.8)] shadow-sm">
+          <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => router.push('/agent-builder')}
-                  className="flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="flex items-center gap-2 text-[var(--text-secondary)] transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back to Builder
                 </Button>
-                <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
+                <div className="w-px h-8 bg-[var(--border-default)]" />
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                    <Sparkles className="w-6 h-6 text-white" />
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border-default)] bg-[var(--bg-soft)] shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
+                    <Sparkles className="w-5 h-5 text-[var(--text-primary)]" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                    <h1 className="text-2xl font-medium tracking-[-0.05em] text-[var(--text-primary)]">
                       Agent Templates
                     </h1>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <p className="text-sm text-[var(--text-secondary)]">
                       Choose from pre-built workflows or start fresh
                     </p>
                   </div>
@@ -230,14 +296,16 @@ export default function TemplatesPage() {
               <div className="flex items-center gap-4">
                 <Badge
                   variant="outline"
-                  className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                  className="flex items-center gap-2 border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-secondary)]"
                 >
                   <Layers className="w-3 h-3" />
-                  {filteredTemplates.length} Template{filteredTemplates.length !== 1 ? 's' : ''}
+                  {loadingDbTemplates
+                    ? 'Syncing library...'
+                    : `${filteredTemplates.length} template${filteredTemplates.length !== 1 ? 's' : ''}`}
                 </Badge>
                 <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                   <DialogTrigger asChild>
-                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
+                    <Button className="bg-[var(--button-bg)] text-[var(--button-text)] shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
                       <Plus className="w-4 h-4 mr-2" />
                       Create Empty
                     </Button>
@@ -245,7 +313,7 @@ export default function TemplatesPage() {
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-blue-500" />
+                        <Sparkles className="w-5 h-5 text-[var(--text-primary)]" />
                         Create New Workflow
                       </DialogTitle>
                     </DialogHeader>
@@ -282,7 +350,7 @@ export default function TemplatesPage() {
                         <Button
                           onClick={createEmptyWorkflow}
                           disabled={!newWorkflowName.trim() || loadingTemplate === 'empty'}
-                          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                          className="flex-1 bg-[var(--button-bg)] text-[var(--button-text)]"
                         >
                           {loadingTemplate === 'empty' ? 'Creating...' : 'Create Workflow'}
                         </Button>
@@ -296,25 +364,25 @@ export default function TemplatesPage() {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50">
-          <div className="container mx-auto px-6 py-6">
+        <div className="glass-panel border-b border-[var(--border-default)] bg-[rgba(255,255,255,0.42)]">
+          <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
             <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center flex-1">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center flex-1 w-full">
                 <div className="relative flex-1 max-w-lg">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--text-tertiary)] w-5 h-5" />
                   <Input
                     placeholder="Search templates by name or description..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="pl-12 h-12 bg-white/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="h-12 rounded-xl border-[var(--input-border)] bg-[var(--input-bg)] pl-12 text-[var(--text-primary)] shadow-sm focus:border-[var(--input-focus)] focus:ring-2 focus:ring-[var(--input-focus-ring)] transition-all"
                   />
                 </div>
                 <div className="flex items-center gap-3">
-                  <Filter className="w-5 h-5 text-slate-400" />
+                  <SlidersHorizontal className="w-5 h-5 text-[var(--text-tertiary)]" />
                   <select
                     value={selectedCategory}
                     onChange={e => setSelectedCategory(e.target.value)}
-                    className="px-4 py-3 bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+                    className="rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--text-primary)] shadow-sm focus:border-[var(--input-focus)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus-ring)] transition-all"
                   >
                     {categories.map(category => (
                       <option key={category} value={category}>
@@ -323,14 +391,33 @@ export default function TemplatesPage() {
                     ))}
                   </select>
                 </div>
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="w-4 h-4 text-[var(--text-tertiary)]" />
+                  <select
+                    aria-label="Sort templates"
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value as typeof sortBy)}
+                    className="rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-3 text-sm text-[var(--text-primary)] shadow-sm focus:border-[var(--input-focus)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus-ring)] transition-all"
+                  >
+                    <option value="recommended">Recommended</option>
+                    <option value="name">Name</option>
+                    <option value="nodes">Most nodes</option>
+                  </select>
+                </div>
+                {(searchQuery || selectedCategory !== 'All' || sortBy !== 'recommended') && (
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-2">
+                    <RotateCcw className="w-4 h-4" />
+                    Reset
+                  </Button>
+                )}
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 shadow-sm">
+                <div className="flex rounded-xl border border-[var(--border-default)] bg-[var(--bg-soft)] p-1 shadow-sm">
                   <Button
                     variant={viewMode === 'grid' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setViewMode('grid')}
-                    className={`rounded-lg ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
+                    className={`rounded-lg ${viewMode === 'grid' ? 'bg-[var(--bg-elevated)] shadow-sm' : ''}`}
                   >
                     <Grid className="w-4 h-4" />
                   </Button>
@@ -338,7 +425,7 @@ export default function TemplatesPage() {
                     variant={viewMode === 'list' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setViewMode('list')}
-                    className={`rounded-lg ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
+                    className={`rounded-lg ${viewMode === 'list' ? 'bg-[var(--bg-elevated)] shadow-sm' : ''}`}
                   >
                     <List className="w-4 h-4" />
                   </Button>
@@ -348,32 +435,99 @@ export default function TemplatesPage() {
           </div>
         </div>
 
+        <div className="container mx-auto px-6 pt-6">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <Filter className="w-4 h-4 shrink-0 text-[var(--text-tertiary)]" />
+            {categories.map(category => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+                className="shrink-0 rounded-full"
+              >
+                {category}
+                <span className="ml-1.5 text-xs opacity-60">
+                  {category === 'All' ? allTemplates.length : categoryCounts[category] || 0}
+                </span>
+              </Button>
+            ))}
+          </div>
+        </div>
+
         {/* Templates Grid/List */}
         <div className="container mx-auto px-6 py-8">
           <div className="h-[calc(100vh-280px)] overflow-auto">
+            {featuredTemplates.length > 0 && !searchQuery && selectedCategory === 'All' && (
+              <section className="mb-10" aria-labelledby="featured-heading">
+                <div className="flex items-end justify-between gap-4 mb-4">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+                      Curated starting points
+                    </p>
+                    <h2
+                      id="featured-heading"
+                      className="text-2xl font-medium tracking-[-0.04em] text-[var(--text-primary)]"
+                    >
+                      Popular workflows
+                    </h2>
+                  </div>
+                  <span className="text-sm text-[var(--text-tertiary)]">
+                    {featuredTemplates.length} featured
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {featuredTemplates.slice(0, 2).map(template => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => setPreviewTemplate(template)}
+                      className="group rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.7)] p-5 text-left shadow-[0_10px_22px_var(--shadow-soft)] transition"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
+                            <Star className="h-3.5 w-3.5" />
+                            Featured · {template.category}
+                          </div>
+                          <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                            {template.name}
+                          </h3>
+                          <p className="mt-1 line-clamp-2 text-sm text-[var(--text-secondary)]">
+                            {template.description}
+                          </p>
+                        </div>
+                        <Eye className="mt-1 h-5 w-5 shrink-0 text-[var(--text-tertiary)] transition" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {viewMode === 'grid' ? (
               <div className="space-y-8">
                 {/* Empty Template Section */}
                 <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Star className="w-5 h-5 text-yellow-500" />
+                  <h2 className="flex items-center gap-2 text-xl font-medium tracking-[-0.03em] text-[var(--text-primary)]">
+                    <Star className="w-5 h-5 text-[var(--text-secondary)]" />
                     Start from Scratch
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 border-2 border-dashed border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 cursor-pointer group">
+                    <Card className="group cursor-pointer border-2 border-dashed border-[var(--border-strong)] bg-[var(--bg-panel)] transition-all duration-300">
                       <CardContent className="p-8 text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                          <Plus className="w-8 h-8 text-white" />
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--button-bg)] shadow-lg transition-transform">
+                          <Plus className="w-8 h-8 text-[var(--button-text)]" />
                         </div>
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                        <h3 className="mb-2 text-lg font-semibold text-[var(--text-primary)]">
                           Blank Workflow
                         </h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                        <p className="mb-6 text-sm text-[var(--text-secondary)]">
                           Start with a clean canvas and build your custom workflow from scratch
                         </p>
                         <Button
                           onClick={() => setShowCreateDialog(true)}
-                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                          className="bg-[var(--button-bg)] text-[var(--button-text)] shadow-lg"
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Create New
@@ -385,29 +539,29 @@ export default function TemplatesPage() {
 
                 {/* Templates Section */}
                 <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Layers className="w-5 h-5 text-blue-500" />
+                  <h2 className="flex items-center gap-2 text-xl font-medium tracking-[-0.03em] text-[var(--text-primary)]">
+                    <Layers className="w-5 h-5 text-[var(--text-secondary)]" />
                     Pre-built Templates
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredTemplates.map(template => {
+                    {sortedTemplates.map(template => {
                       const templateIcons = getTemplateIcons(template);
                       const complexity = getTemplateComplexity(template);
 
                       return (
                         <Card
                           key={template.id}
-                          className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden"
+                          className="group cursor-pointer overflow-hidden border border-[var(--border-default)] bg-[var(--bg-panel)] transition-all duration-300"
                         >
-                          <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+                          <div className="h-1 bg-[var(--button-bg)]" />
                           <CardHeader className="pb-4">
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center shadow-sm">
-                                  <FileText className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-default)] bg-[var(--bg-soft)] shadow-sm">
+                                  <FileText className="w-5 h-5 text-[var(--text-secondary)]" />
                                 </div>
                                 <div className="flex-1">
-                                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white line-clamp-1">
+                                  <CardTitle className="line-clamp-1 text-base font-semibold text-[var(--text-primary)]">
                                     {template.name}
                                   </CardTitle>
                                   <Badge
@@ -419,6 +573,21 @@ export default function TemplatesPage() {
                                   </Badge>
                                 </div>
                               </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={
+                                  favoriteIds.includes(template.id)
+                                    ? `Remove ${template.name} from favorites`
+                                    : `Save ${template.name} to favorites`
+                                }
+                                onClick={() => toggleFavorite(template.id)}
+                                className="shrink-0"
+                              >
+                                <Bookmark
+                                  className={`w-4 h-4 ${favoriteIds.includes(template.id) ? 'fill-current text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}
+                                />
+                              </Button>
                             </div>
 
                             {/* Node Icons */}
@@ -426,17 +595,17 @@ export default function TemplatesPage() {
                               {templateIcons.map(({ type, IconComponent }) => (
                                 <div
                                   key={type}
-                                  className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 flex items-center justify-center shadow-sm"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-soft)] shadow-sm"
                                   title={type}
                                 >
-                                  <IconComponent className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                  <IconComponent className="w-4 h-4 text-[var(--text-secondary)]" />
                                 </div>
                               ))}
                             </div>
                           </CardHeader>
 
                           <CardContent className="pt-0">
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">
+                            <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-[var(--text-secondary)]">
                               {template.description}
                             </p>
 
@@ -444,26 +613,37 @@ export default function TemplatesPage() {
                               <div className="flex items-center gap-2">
                                 <Badge
                                   variant="secondary"
-                                  className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+                                  className="bg-[var(--bg-soft)] text-xs text-[var(--text-secondary)]"
                                 >
                                   {template.category}
                                 </Badge>
-                                <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
+                                <div className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
                                   <Users className="w-3 h-3" />
                                   {template.nodes.length} nodes
                                 </div>
                               </div>
                             </div>
 
-                            <Button
-                              size="sm"
-                              className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg group-hover:shadow-xl transition-all duration-200"
-                              onClick={() => loadTemplate(template)}
-                              disabled={loadingTemplate === template.id}
-                            >
-                              <Play className="w-4 h-4 mr-2" />
-                              {loadingTemplate === template.id ? 'Loading...' : 'Use Template'}
-                            </Button>
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => setPreviewTemplate(template)}
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                Preview
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="flex-1 bg-[var(--button-bg)] text-[var(--button-text)] shadow-lg transition-all duration-200"
+                                onClick={() => loadTemplate(template)}
+                                disabled={loadingTemplate === template.id}
+                              >
+                                <Play className="w-4 h-4 mr-2" />
+                                {loadingTemplate === template.id ? 'Loading...' : 'Use'}
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
                       );
@@ -475,26 +655,40 @@ export default function TemplatesPage() {
               <div className="space-y-8">
                 {/* List view - simplified for now */}
                 <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                    <List className="w-5 h-5 text-blue-500" />
+                  <h2 className="flex items-center gap-2 text-xl font-medium tracking-[-0.03em] text-[var(--text-primary)]">
+                    <List className="w-5 h-5 text-[var(--text-secondary)]" />
                     Templates List View
                   </h2>
                   <div className="space-y-3">
-                    {filteredTemplates.map(template => (
-                      <Card key={template.id} className="p-4 hover:shadow-md transition-shadow">
+                    {sortedTemplates.map(template => (
+                      <Card
+                        key={template.id}
+                        className="border-[var(--border-default)] bg-[var(--bg-panel)] p-4 transition-shadow"
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <FileText className="w-5 h-5 text-slate-400" />
+                            <FileText className="w-5 h-5 text-[var(--text-tertiary)]" />
                             <div>
                               <h3 className="font-semibold">{template.name}</h3>
-                              <p className="text-sm text-slate-600 dark:text-slate-400">
+                              <p className="text-sm text-[var(--text-secondary)]">
                                 {template.description}
                               </p>
                             </div>
                           </div>
-                          <Button size="sm" onClick={() => loadTemplate(template)}>
-                            Use
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPreviewTemplate(template)}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Preview
+                            </Button>
+                            <Button size="sm" onClick={() => loadTemplate(template)}>
+                              <Play className="w-4 h-4 mr-2" />
+                              Use
+                            </Button>
+                          </div>
                         </div>
                       </Card>
                     ))}
@@ -505,13 +699,13 @@ export default function TemplatesPage() {
 
             {filteredTemplates.length === 0 && (
               <div className="text-center py-16">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center shadow-lg">
-                  <FileText className="w-10 h-10 text-slate-400 dark:text-slate-500" />
+                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-[var(--border-default)] bg-[var(--bg-soft)] shadow-lg">
+                  <FileText className="w-10 h-10 text-[var(--text-tertiary)]" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">
+                <h3 className="mb-3 text-xl font-semibold text-[var(--text-primary)]">
                   No templates found
                 </h3>
-                <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                <p className="mx-auto mb-6 max-w-md text-[var(--text-secondary)]">
                   {searchQuery || selectedCategory !== 'All'
                     ? "Try adjusting your search or filter criteria to find what you're looking for."
                     : 'No templates are available at the moment. Start by creating your own workflow!'}
@@ -523,14 +717,14 @@ export default function TemplatesPage() {
                       setSearchQuery('');
                       setSelectedCategory('All');
                     }}
-                    className="border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="border-[var(--border-default)]"
                   >
                     Clear Filters
                   </Button>
                 ) : (
                   <Button
                     onClick={() => setShowCreateDialog(true)}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                    className="bg-[var(--button-bg)] text-[var(--button-text)] shadow-lg"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Create Your First Workflow
@@ -540,6 +734,131 @@ export default function TemplatesPage() {
             )}
           </div>
         </div>
+
+        <Dialog
+          open={Boolean(previewTemplate)}
+          onOpenChange={open => !open && setPreviewTemplate(null)}
+        >
+          <DialogContent className="sm:max-w-lg">
+            {previewTemplate && (
+              <>
+                <DialogHeader>
+                  <div className="flex items-start justify-between gap-4 pr-6">
+                    <div>
+                      <DialogTitle className="text-xl">{previewTemplate.name}</DialogTitle>
+                      <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                        {previewTemplate.description}
+                      </p>
+                    </div>
+                    <Badge variant="outline">{previewTemplate.category}</Badge>
+                  </div>
+                </DialogHeader>
+                <div className="grid grid-cols-3 gap-3 py-2">
+                  <div className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-soft)] p-3">
+                    <p className="text-xs text-[var(--text-tertiary)]">Nodes</p>
+                    <p className="mt-1 text-lg font-semibold">{previewTemplate.nodes.length}</p>
+                  </div>
+                  <div className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-soft)] p-3">
+                    <p className="text-xs text-[var(--text-tertiary)]">Connections</p>
+                    <p className="mt-1 text-lg font-semibold">{previewTemplate.edges.length}</p>
+                  </div>
+                  <div className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-soft)] p-3">
+                    <p className="text-xs text-[var(--text-tertiary)]">Level</p>
+                    <p className="mt-1 text-lg font-semibold">
+                      {getTemplateComplexity(previewTemplate).level}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid gap-3 border-y border-[var(--border-default)] py-4 sm:grid-cols-2">
+                  <div className="flex items-start gap-3">
+                    <Database className="mt-0.5 h-4 w-4 text-[var(--text-tertiary)]" />
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)]">Source</p>
+                      <p className="mt-1 text-sm font-medium capitalize">
+                        {previewTemplate.source}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Info className="mt-0.5 h-4 w-4 text-[var(--text-tertiary)]" />
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)]">Version</p>
+                      <p className="mt-1 text-sm font-medium">v{previewTemplate.version}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <UserRound className="mt-0.5 h-4 w-4 text-[var(--text-tertiary)]" />
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)]">Created by</p>
+                      <p className="mt-1 text-sm font-medium">
+                        {previewTemplate.author?.name || 'Denbegnaye team'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <GitBranch className="mt-0.5 h-4 w-4 text-[var(--text-tertiary)]" />
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)]">Last updated</p>
+                      <p className="mt-1 text-sm font-medium">
+                        {new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(
+                          new Date(previewTemplate.updatedAt)
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-[var(--text-tertiary)]" />
+                    <p className="text-sm font-medium">Capabilities</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(previewTemplate.tags.length > 0
+                      ? previewTemplate.tags
+                      : getTemplateNodeTypes(previewTemplate)
+                    ).map((tag: string) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="border-[var(--border-default)] bg-[var(--bg-soft)] font-normal"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-2 text-sm font-medium">Workflow steps and connections</p>
+                  <div className="max-h-48 space-y-2 overflow-y-auto">
+                    {previewTemplate.nodes.map((node: any, index: number) => (
+                      <div
+                        key={node.id || index}
+                        className="flex items-center gap-3 rounded-lg border border-[var(--border-default)] px-3 py-2 text-sm"
+                      >
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--bg-soft)] text-xs font-semibold">
+                          {index + 1}
+                        </span>
+                        <span className="truncate">
+                          {node.data?.label || node.type || 'Workflow step'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <Button
+                  className="w-full bg-[var(--button-bg)] text-[var(--button-text)]"
+                  onClick={() => {
+                    loadTemplate(previewTemplate);
+                    setPreviewTemplate(null);
+                  }}
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  Use this template
+                </Button>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AuthGuard>
   );
