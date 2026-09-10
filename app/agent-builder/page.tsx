@@ -4,11 +4,15 @@ import { ReactFlowProvider } from 'reactflow';
 import { AgentBuilderContent } from './components/AgentBuilderContent';
 import { AuthGuard } from '@/components/AuthGuard';
 
-export default function AgentBuilderPage() {
+type AgentBuilderPageProps = {
+  initialSection?: 'builder' | 'dashboard' | 'settings' | 'templates' | 'webhooks' | 'vault';
+};
+
+export default function AgentBuilderPage({ initialSection = 'builder' }: AgentBuilderPageProps) {
   return (
     <AuthGuard>
       <ReactFlowProvider>
-        <AgentBuilderContent />
+        <AgentBuilderContent initialSection={initialSection} />
       </ReactFlowProvider>
     </AuthGuard>
   );

@@ -30,7 +30,6 @@ const navLinks = [
   { label: 'Builder', href: '/agent-builder' },
   { label: 'Office Intelligence', href: '/office-intelligence' },
   { label: 'Pricing', href: '/pricing' },
-  { label: 'Templates', href: '/templates' },
   { label: 'Blog', href: '/blog' },
 ];
 

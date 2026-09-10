@@ -64,7 +64,11 @@ import { AgentBuilderSettings } from './AgentBuilderSettings';
 import { AgentBuilderLogPanel } from './AgentBuilderLogPanel';
 import { useAgentBuilderEffects } from './useAgentBuilderEffects';
 
-function AgentBuilderContent() {
+type AgentBuilderContentProps = {
+  initialSection?: 'builder' | 'dashboard' | 'settings' | 'templates' | 'webhooks' | 'vault';
+};
+
+function AgentBuilderContent({ initialSection = 'builder' }: AgentBuilderContentProps) {
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
     type: 'node' | 'edge' | 'canvas' | null;
@@ -488,7 +492,7 @@ function AgentBuilderContent() {
   });
   const [activeSection, setActiveSection] = useState<
     'builder' | 'dashboard' | 'settings' | 'templates' | 'webhooks' | 'vault'
-  >('builder');
+  >(initialSection);
   const [showNodePalette, setShowNodePalette] = useState(true);
   const [nodePalettePosition, setNodePalettePosition] = useState({ x: 80, y: 80 });
   const [settingsPosition, setSettingsPosition] = useState({ x: 80, y: 80 });
