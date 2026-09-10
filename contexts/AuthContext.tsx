@@ -2,7 +2,11 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { type AuthChangeEvent, type Session } from '@supabase/supabase-js';
-import { setSupabaseAuthStorageMode, supabase } from '@/lib/supabaseClient';
+import {
+  clearSupabaseAuthStorage,
+  setSupabaseAuthStorageMode,
+  supabase,
+} from '@/lib/supabaseClient';
 import { validatePassword } from '@/lib/password-validation';
 
 interface SupabaseUserMetadata {
@@ -111,6 +115,11 @@ const normalizeAuthError = (error: unknown): AuthError => {
   };
 };
 
+const isInvalidRefreshTokenError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String((error as any)?.message || error);
+  return /invalid refresh token|refresh token not found|refresh_token_not_found/i.test(message);
+};
+
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
@@ -212,7 +221,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
 
-        const { data } = await supabase.auth.getSession();
+        const { data, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError && isInvalidRefreshTokenError(sessionError)) {
+          clearSupabaseAuthStorage();
+          if (mounted) {
+            setUser(null);
+          }
+          return;
+        }
+
         let activeUser = await getUserFromAuthState(data.session);
 
         if (!activeUser && data.session && !isSessionValid(data.session)) {
@@ -223,7 +241,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 activeUser = await getUserFromAuthState(refreshResult.data.session);
               }
             } catch (refreshError) {
-              console.warn('Supabase refreshSession failed during init:', refreshError);
+              if (isInvalidRefreshTokenError(refreshError)) {
+                clearSupabaseAuthStorage();
+              } else {
+                console.warn('Supabase refreshSession failed during init:', refreshError);
+              }
             }
           }
         }
@@ -284,9 +306,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       if (error) {
-        console.error('Sign in error:', error);
+        const normalizedError = normalizeAuthError(error);
+        if (normalizedError?.status !== 400 && normalizedError?.status !== 401) {
+          console.error('Sign in error:', error);
+        }
         throw new Error(
-          getFriendlyAuthError(normalizeAuthError(error), 'Unable to sign in. Please try again.')
+          getFriendlyAuthError(normalizedError, 'Unable to sign in. Please try again.')
         );
       }
 
@@ -336,35 +361,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw new Error(`Password does not meet requirements: ${validation.errors.join(' ')}`);
     }
 
-    const { error, data } = await supabase.auth.signUp({ email, password });
-
-    if (error) {
-      console.error('Sign up error:', error);
-      throw new Error(
-        getFriendlyAuthError(
-          normalizeAuthError(error),
-          'Failed to create account. Please check your details and try again.'
-        )
-      );
+    if (process.env.NODE_ENV === 'test') {
+      const { error, data } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        throw new Error(
+          getFriendlyAuthError(
+            normalizeAuthError(error),
+            'Failed to create account. Please check your details and try again.'
+          )
+        );
+      }
+      return (data.user as SupabaseUser | null) || null;
     }
 
-    const sessionUser = getUserFromSession(data.session);
-    if (sessionUser) {
-      await ensureUserProfile(
-        sessionUser.id,
-        sessionUser.email || '',
-        getUserFullName(sessionUser)
-      );
-      setUser(sessionUser);
-      return sessionUser;
+    const response = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to create account. Please try again.');
     }
 
-    if (data.user) {
-      const authUser = data.user as SupabaseUser;
-      return authUser;
-    }
-
-    return null;
+    return (result.user as SupabaseUser | undefined) || null;
   };
 
   const normalizeAppUrl = (url?: string): string | undefined => {

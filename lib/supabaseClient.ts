@@ -67,6 +67,11 @@ const authStorage = {
   },
 };
 
+export const clearSupabaseAuthStorage = () => {
+  const projectRef = new URL(SUPABASE_URL || 'http://localhost').hostname.split('.')[0];
+  authStorage.removeItem(`sb-${projectRef}-auth-token`);
+};
+
 let supabase: SupabaseClient;
 let supabaseAdmin: SupabaseClient | null = null;
 
@@ -110,6 +115,7 @@ if (process.env.NODE_ENV === 'test') {
   } else {
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
+        flowType: 'pkce',
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,

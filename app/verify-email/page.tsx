@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { MailCheck, RefreshCw, ShieldCheck, ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
@@ -15,37 +15,21 @@ export default function VerifyEmailPage() {
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
+
+  const emailFromUrl = searchParams.get('email')?.trim().toLowerCase() || '';
 
   const loadUser = async () => {
     try {
-      if (typeof window !== 'undefined' && (supabase.auth as any)?.getSessionFromUrl) {
-        try {
-          const sessionResult = await (supabase.auth as any).getSessionFromUrl();
-          if (sessionResult?.data?.session) {
-            setUser(sessionResult.data.session.user);
-            setIsLoading(false);
-            if (
-              sessionResult.data.session.user.email_confirmed_at ||
-              ['google', 'github'].includes(sessionResult.data.session.user.app_metadata?.provider)
-            ) {
-              toast({
-                title: 'Email verified',
-                description: 'Welcome back! Redirecting to builder...',
-              });
-              router.replace('/agent-builder');
-              return;
-            }
-            return;
-          }
-        } catch (err) {
-          console.warn('getSessionFromUrl failed:', err);
-        }
-      }
-
       const { data, error } = await supabase.auth.getUser();
 
       if (error || !data.user) {
+        if (emailFromUrl) {
+          setUser({ email: emailFromUrl });
+          setIsLoading(false);
+          return;
+        }
         toast({
           title: 'Not signed in',
           description: 'Please login or sign up first.',
@@ -83,18 +67,21 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     loadUser();
-  }, []);
+  }, [emailFromUrl, router, toast]);
 
   const resendVerification = async () => {
     if (!user?.email) return;
     setSending(true);
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email: user.email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/verify-email`,
-      },
+    const response = await fetch('/api/auth/resend-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email }),
     });
+    const result = await response.json().catch(() => ({}));
+    const error = response.ok
+      ? null
+      : new Error(result.error || 'Unable to resend confirmation email.');
 
     if (error) {
       toast({

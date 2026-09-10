@@ -53,6 +53,7 @@ export default function SignupPage() {
   const { user, loading: authLoading, signUp, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const normalizeEmail = (value: string) => value.trim().toLowerCase();
 
   useEffect(() => {
     setIsMounted(true);
@@ -68,13 +69,12 @@ export default function SignupPage() {
       ) {
         router.replace('/agent-builder');
       } else {
-        router.replace('/verify-email');
+        router.replace(`/verify-email?email=${encodeURIComponent(normalizeEmail(email))}`);
       }
     }
   }, [authLoading, user, router]);
 
   const passwordValidation = useMemo(() => validatePassword(password), [password]);
-  const normalizeEmail = (value: string) => value.trim().toLowerCase();
   const emailValidation = useMemo<EmailValidationResult>(() => {
     if (email.length === 0) {
       return { success: true };
@@ -169,7 +169,7 @@ export default function SignupPage() {
       });
 
       if (newUser && !newUser.email_confirmed_at) {
-        router.replace('/verify-email');
+        router.replace(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
       } else {
         router.replace('/agent-builder');
       }
