@@ -23,6 +23,10 @@
   --shadow-strong: rgba(15, 23, 42, 0.08);
   --button-bg: #171717;
   --button-text: #f8f5f2;
+  --input-bg: #fffdf9;
+  --input-border: #c9c1b6;
+  --input-focus: #8b5e34;
+  --input-focus-ring: rgba(139, 94, 52, 0.2);
   color-scheme: light;
 }
 
@@ -49,6 +53,10 @@ html[data-theme='dark'] {
   --shadow-strong: rgba(15, 23, 42, 0.08);
   --button-bg: #171717;
   --button-text: #f8f5f2;
+  --input-bg: #fffdf9;
+  --input-border: #c9c1b6;
+  --input-focus: #8b5e34;
+  --input-focus-ring: rgba(139, 94, 52, 0.2);
   color-scheme: light;
 }
 
@@ -375,6 +383,29 @@ body {
 
 body * {
   box-shadow: none !important;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']),
+textarea {
+  background-color: var(--input-bg) !important;
+  border: 1px solid var(--input-border) !important;
+  color: var(--text-primary) !important;
+  caret-color: var(--input-focus) !important;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
+    [type='range']
+  )::placeholder,
+textarea::placeholder {
+  color: var(--text-tertiary) !important;
+  opacity: 1;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):focus,
+textarea:focus {
+  border-color: var(--input-focus) !important;
+  box-shadow: 0 0 0 3px var(--input-focus-ring) !important;
+  outline: none;
 }
 
 body,
