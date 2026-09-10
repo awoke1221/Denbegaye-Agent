@@ -427,8 +427,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       provider: 'google',
       options: {
         redirectTo,
-        scopes:
-          'openid email profile https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets',
+        scopes: 'openid email profile',
       },
     });
 

@@ -228,7 +228,9 @@ describe('AuthContext', () => {
 
     expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
       provider: 'google',
-      options: expect.any(Object),
+      options: expect.objectContaining({
+        scopes: 'openid email profile',
+      }),
     });
   });
 
