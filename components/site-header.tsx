@@ -10,7 +10,6 @@ import {
   Menu,
   Settings,
   Sparkles,
-  Wrench,
 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,7 +27,7 @@ import { extractAvatarInitials, getUserDisplayName } from '@/lib/avatar-utils';
 
 const navLinks = [
   { label: 'Home', href: '/' },
-  { label: 'Platform', href: '/agent-builder' },
+  { label: 'Builder', href: '/agent-builder' },
   { label: 'Office Intelligence', href: '/office-intelligence' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Templates', href: '/templates' },
@@ -89,14 +88,6 @@ export function SiteHeader() {
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
-              <Button
-                onClick={() => router.push('/agent-builder')}
-                className="bg-[var(--button-bg)] text-[var(--button-text)] shadow-[0_12px_28px_rgba(15,23,42,0.08)]"
-              >
-                <Wrench className="mr-2 h-4 w-4" />
-                Builder
-              </Button>
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--bg-subtle)] p-1.5 transition hover:border-[var(--border-strong)] hover:bg-[var(--bg-hover)]">
