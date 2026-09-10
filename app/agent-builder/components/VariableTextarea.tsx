@@ -57,22 +57,22 @@ export function VariableTextarea({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       {label && (
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '12px',
+            gap: '10px',
           }}
         >
           <label
             style={{
-              fontSize: '11px',
+              fontSize: '10px',
               fontWeight: 700,
               color: 'var(--text-primary)',
-              letterSpacing: '0.08em',
+              letterSpacing: '0.1em',
               textTransform: 'uppercase',
               display: 'flex',
               alignItems: 'center',
@@ -106,29 +106,32 @@ export function VariableTextarea({
           className={className}
           style={{
             width: '100%',
-            minHeight: '140px',
-            padding: '12px 14px',
+            minHeight: '112px',
+            padding: '11px 13px',
             fontSize: '13px',
-            border: '1px solid var(--border-default)',
-            borderRadius: '12px',
-            background: disabled ? 'rgba(17,24,39,0.02)' : 'rgba(255,255,255,0.34)',
+            border: '1px solid var(--input-border)',
+            borderRadius: '10px',
+            background: disabled
+              ? 'var(--bg-subtle)'
+              : 'linear-gradient(145deg, var(--input-bg), var(--bg-subtle))',
             color: 'var(--text-primary)',
             resize: 'vertical',
             outline: 'none',
             fontFamily: 'var(--font-mono)',
-            lineHeight: 1.6,
-            transition: 'all 0.2s ease',
+            lineHeight: 1.55,
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
             fontWeight: 500,
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+            boxShadow: '0 1px 2px var(--shadow-soft), inset 0 1px 0 rgba(255,255,255,0.45)',
           }}
           onFocus={e => {
-            e.currentTarget.style.borderColor = 'var(--border-focus)';
+            e.currentTarget.style.borderColor = 'var(--input-focus)';
             e.currentTarget.style.boxShadow =
-              '0 0 0 3px rgba(17,24,39,0.05), inset 0 1px 0 rgba(255,255,255,0.6)';
+              '0 0 0 3px var(--input-focus-ring), 0 4px 12px var(--shadow-soft)';
           }}
           onBlur={e => {
-            e.currentTarget.style.borderColor = 'var(--border-default)';
-            e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.6)';
+            e.currentTarget.style.borderColor = 'var(--input-border)';
+            e.currentTarget.style.boxShadow =
+              '0 1px 2px var(--shadow-soft), inset 0 1px 0 rgba(255,255,255,0.45)';
           }}
         />
       </div>
