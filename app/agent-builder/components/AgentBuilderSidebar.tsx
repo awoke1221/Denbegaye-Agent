@@ -41,7 +41,7 @@ export function AgentBuilderSidebar({
                   {extractAvatarInitials(user?.user_metadata?.full_name || user?.email || 'U')}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-[var(--text-primary)] rounded-full border-2 border-[var(--bg-surface)] opacity-80"></div>
+              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-[#22c55e] rounded-full border-2 border-[var(--bg-surface)]"></div>
             </div>
             {!sidebarCollapsed && (
               <div>
@@ -111,7 +111,7 @@ export function AgentBuilderSidebar({
                   <>
                     <span className="text-sm font-medium">{item.label}</span>
                     {activeSection === item.id && (
-                      <div className="ml-auto w-2 h-2 bg-[var(--text-primary)] rounded-full opacity-70"></div>
+                      <div className="ml-auto w-2 h-2 bg-[#22c55e] rounded-full"></div>
                     )}
                   </>
                 )}

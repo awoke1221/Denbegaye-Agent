@@ -226,7 +226,7 @@ export function AgentBuilderDashboard({
                             <div
                               className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
                                 agent.status === 'active'
-                                  ? 'bg-[#1b1b1b]'
+                                  ? 'bg-[#22c55e]'
                                   : agent.status === 'error'
                                     ? 'bg-[#6b7280]'
                                     : 'bg-[#8b8b8b]'
