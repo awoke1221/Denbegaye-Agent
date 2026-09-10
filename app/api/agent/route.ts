@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getOfficeIntelligenceUser } from '@/lib/office-intelligence-auth';
 
 const backendCandidates = [
   process.env.NEXT_PUBLIC_BACKEND_URL,
@@ -42,7 +43,12 @@ function createLocalResponse(agentId: string, prompt: string, metadata?: Record<
   };
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = await getOfficeIntelligenceUser(request);
+  if (!user) {
+    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
   return NextResponse.json({
     ok: true,
     message: 'Office Intelligence agent endpoint is active.',
@@ -52,6 +58,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getOfficeIntelligenceUser(request);
+    if (!user) {
+      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { agent_id, prompt, mode, top_k, use_langchain, ...rest } = body || {};
 

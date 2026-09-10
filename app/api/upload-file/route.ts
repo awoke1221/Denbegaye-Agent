@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
+import { getOfficeIntelligenceUser } from '@/lib/office-intelligence-auth';
 
 export const runtime = 'nodejs';
 
@@ -10,7 +11,12 @@ function sanitizeFilename(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = await getOfficeIntelligenceUser(request);
+  if (!user) {
+    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
   return NextResponse.json({
     ok: true,
     message: 'Office Intelligence upload endpoint is active.',
@@ -20,6 +26,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getOfficeIntelligenceUser(request);
+    if (!user) {
+      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const uploadedFile = formData.get('file');
 
