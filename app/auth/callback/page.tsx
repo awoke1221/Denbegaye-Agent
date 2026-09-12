@@ -9,9 +9,11 @@ export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    let redirectTimer: ReturnType<typeof setTimeout> | undefined;
 
     const completeEmailConfirmation = async () => {
       const errorDescription = searchParams.get('error_description');
@@ -35,14 +37,27 @@ export default function AuthCallbackPage() {
           setErrorMessage('This confirmation link is invalid or has expired.');
           return;
         }
-        router.replace('/agent-builder');
+
+        if (!cancelled) {
+          setSuccessMessage('Email verified successfully. Redirecting to login...');
+          redirectTimer = setTimeout(() => {
+            router.replace('/login');
+          }, 1500);
+        }
         return;
       }
 
       if (!code) {
         const { data } = await supabase.auth.getSession();
         if (!cancelled) {
-          router.replace(data.session?.user?.email_confirmed_at ? '/agent-builder' : '/login');
+          if (data.session?.user?.email_confirmed_at) {
+            setSuccessMessage('Email verified successfully. Redirecting to login...');
+            redirectTimer = setTimeout(() => {
+              router.replace('/login');
+            }, 1500);
+          } else {
+            router.replace('/login');
+          }
         }
         return;
       }
@@ -55,13 +70,21 @@ export default function AuthCallbackPage() {
         return;
       }
 
-      router.replace('/agent-builder');
+      if (!cancelled) {
+        setSuccessMessage('Email verified successfully. Redirecting to login...');
+        redirectTimer = setTimeout(() => {
+          router.replace('/login');
+        }, 1500);
+      }
     };
 
     void completeEmailConfirmation();
 
     return () => {
       cancelled = true;
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+      }
     };
   }, [router, searchParams]);
 
@@ -77,6 +100,40 @@ export default function AuthCallbackPage() {
             className="rounded-xl bg-[var(--button-bg)] px-4 py-2 text-sm font-semibold text-[var(--button-text)]"
           >
             Return to verification
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (successMessage) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[var(--bg-page)] px-6 text-center text-[var(--text-primary)]">
+        <div className="max-w-md space-y-5 rounded-[2rem] border border-[var(--border-default)] bg-[rgba(255,255,255,0.8)] p-8 shadow-[0_40px_120px_rgba(15,23,42,0.08)]">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-8 w-8"
+              aria-hidden="true"
+            >
+              <path d="M5 13l4 4L19 3" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold">Email verified successfully</h1>
+            <p className="text-[var(--text-secondary)]">{successMessage}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.replace('/login')}
+            className="w-full rounded-xl bg-[var(--button-bg)] px-4 py-3 text-sm font-semibold text-[var(--button-text)] transition hover:opacity-95"
+          >
+            Continue to login
           </button>
         </div>
       </main>

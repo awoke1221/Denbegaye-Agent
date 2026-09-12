@@ -14,11 +14,28 @@ export default function VerifyEmailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(
+    'Your account is waiting for email verification.'
+  );
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
   const emailFromUrl = searchParams.get('email')?.trim().toLowerCase() || '';
+
+  const isUserVerified = (candidate: any) => {
+    if (!candidate) return false;
+    return (
+      Boolean(candidate.email_confirmed_at) ||
+      ['google', 'github'].includes(candidate.app_metadata?.provider ?? '')
+    );
+  };
+
+  const handleVerifiedTransition = () => {
+    setIsVerified(true);
+    setStatusMessage('Your email has been verified successfully.');
+  };
 
   const loadUser = async () => {
     try {
@@ -28,6 +45,7 @@ export default function VerifyEmailPage() {
         if (emailFromUrl) {
           setUser({ email: emailFromUrl });
           setIsLoading(false);
+          setStatusMessage('We found your email address. Please confirm it to finish setup.');
           return;
         }
         toast({
@@ -41,18 +59,15 @@ export default function VerifyEmailPage() {
 
       setUser(data.user);
 
-      if (
-        data.user.email_confirmed_at ||
-        ['google', 'github'].includes(data.user.app_metadata?.provider ?? '')
-      ) {
-        toast({
-          title: 'Email verified',
-          description: 'Welcome back! Redirecting to builder...',
-        });
-        router.replace('/agent-builder');
+      if (isUserVerified(data.user)) {
+        setStatusMessage(
+          'Your email looks verified already. Please use the check status button to confirm.'
+        );
+        setIsLoading(false);
         return;
       }
 
+      setStatusMessage('A confirmation email is waiting for you.');
       setIsLoading(false);
     } catch (err) {
       console.error('loadUser error:', err);
@@ -67,7 +82,7 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     loadUser();
-  }, [emailFromUrl, router, toast]);
+  }, [emailFromUrl]);
 
   const resendVerification = async () => {
     if (!user?.email) return;
@@ -90,6 +105,7 @@ export default function VerifyEmailPage() {
         variant: 'destructive',
       });
     } else {
+      setStatusMessage('A fresh verification email is on the way.');
       toast({
         title: 'Verification email sent',
         description: 'Check your inbox and follow the verification link.',
@@ -110,19 +126,24 @@ export default function VerifyEmailPage() {
 
     setUser(data.user);
 
-    if (
-      data.user.email_confirmed_at ||
-      ['google', 'github'].includes(data.user.app_metadata?.provider ?? '')
-    ) {
+    if (isUserVerified(data.user)) {
+      handleVerifiedTransition();
+      setStatusMessage('Your email has been verified successfully.');
       toast({
         title: 'Email verified',
-        description: 'Redirecting to builder...',
+        description: 'Verification successful. Redirecting to login...',
       });
-      router.replace('/agent-builder');
+      router.replace('/login');
+      setChecking(false);
       return;
     }
 
+    setStatusMessage('Your email is still pending verification.');
     setChecking(false);
+  };
+
+  const continueToLogin = () => {
+    router.replace('/login');
   };
 
   if (isLoading) {
@@ -178,37 +199,53 @@ export default function VerifyEmailPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-subtle)] p-4 text-sm text-[var(--text-primary)]">
-              <div className="flex items-center gap-2 font-medium text-[var(--text-primary)]">
+            <div
+              className={`rounded-2xl border p-4 text-sm ${
+                isVerified
+                  ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700'
+                  : 'border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)]'
+              }`}
+            >
+              <div className="flex items-center gap-2 font-medium">
                 <ShieldCheck className="h-4 w-4" />
-                Verification required
+                {isVerified ? 'Verification complete' : 'Verification required'}
               </div>
-              <p className="mt-2 leading-6 text-[var(--text-secondary)]">
-                A verification link has been sent to your email. Please check your inbox and click
-                the link to confirm your account before continuing.
-              </p>
+              <p className="mt-2 leading-6 text-current/90">{statusMessage}</p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button
-                variant="secondary"
-                onClick={resendVerification}
-                disabled={sending}
-                className="flex-1 border-[var(--border-default)] bg-[rgba(255,255,255,0.7)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${sending ? 'animate-spin' : ''}`} />
-                {sending ? 'Sending...' : 'Resend email'}
-              </Button>
-              <Button
-                variant="default"
-                onClick={checkVerification}
-                disabled={checking}
-                className="flex-1 bg-[var(--button-bg)] text-[var(--button-text)] shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
-              >
-                {checking ? 'Checking...' : 'Check status'}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
+            {!isVerified ? (
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button
+                  variant="secondary"
+                  onClick={resendVerification}
+                  disabled={sending}
+                  className="flex-1 border-[var(--border-default)] bg-[rgba(255,255,255,0.7)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${sending ? 'animate-spin' : ''}`} />
+                  {sending ? 'Sending...' : 'Resend email'}
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={checkVerification}
+                  disabled={checking}
+                  className="flex-1 bg-[var(--button-bg)] text-[var(--button-text)] shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
+                >
+                  {checking ? 'Checking...' : 'Check status'}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button
+                  variant="default"
+                  onClick={continueToLogin}
+                  className="flex-1 bg-[var(--button-bg)] text-[var(--button-text)] shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
+                >
+                  Continue to login
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
 
             <p className="text-sm leading-6 text-[var(--text-secondary)]">
               After verification, you will be redirected automatically to continue building your AI

@@ -12,6 +12,7 @@ import { Toaster } from '@/components/ui/toaster';
 // const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://denbegnayeaiagent.com'),
   title: 'Denbegnaye - AI-Powered Digital Marketing Toolkit',
   description:
     'Denbegnaye: professional AI-powered digital marketing toolkit for creators. Automate campaigns across social and content workflows.',
