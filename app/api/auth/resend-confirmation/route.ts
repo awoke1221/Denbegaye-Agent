@@ -5,7 +5,7 @@ const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const resendApiKey = process.env.RESEND_API_KEY || process.env.resend_api_key;
 const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
-const sender = process.env.RESEND_FROM_EMAIL || 'Denbegaye <noreply@denbengayeaiagent.com>';
+const sender = process.env.RESEND_FROM_EMAIL || 'Denbegnaye <noreply@denbegnayeaiagent.com>';
 
 export async function POST(request: Request) {
   if (!supabaseUrl || !serviceRoleKey || !resendApiKey) {
