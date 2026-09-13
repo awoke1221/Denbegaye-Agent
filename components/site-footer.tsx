@@ -32,7 +32,7 @@ export function SiteFooter() {
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border-default)] bg-[var(--bg-soft)]">
                 <img
-                  src="/denbegnaye-logo.svg"
+                  src="/denbegnaye-logo.png"
                   alt="Denbegnaye Logo"
                   className="h-5 w-5"
                   onError={event => {
