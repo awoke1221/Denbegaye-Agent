@@ -12,17 +12,41 @@ import { Toaster } from '@/components/ui/toaster';
 // const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://www.denbegnayeaiagent.com'),
-  title: 'Denbegnaye - AI-Powered Digital Marketing Toolkit',
+  metadataBase: new URL('https://www.denbegnayeaiagent.com'),
+  title: 'Denbegnaye - Build AI Agents Without Limits',
   description:
-    'Denbegnaye: professional AI-powered digital marketing toolkit for creators. Automate campaigns across social and content workflows.',
-  keywords: 'Denbegnaye, AI marketing, social media automation, content creation, digital tools',
+    'Denbegnaye is a visual AI agent builder for no-code workflow automation, with Office Intelligence tools for analyzing documents and business data.',
+  keywords: [
+    'Denbegnaye',
+    'AI agent builder',
+    'workflow automation',
+    'Office Intelligence',
+    'document analysis',
+    'data analysis',
+    'no-code AI',
+  ],
   authors: [{ name: 'Denbegnaye Team' }],
   openGraph: {
-    title: 'Denbegnaye - AI-Powered Digital Marketing Toolkit',
-    description: 'Unlock the power of AI for your marketing and social growth with Denbegnaye',
+    title: 'Denbegnaye - Build AI Agents Without Limits',
+    description:
+      'Denbegnaye is a visual AI agent builder for no-code workflow automation, with Office Intelligence tools for analyzing documents and business data.',
+    url: 'https://www.denbegnayeaiagent.com',
     type: 'website',
-    images: ['/denbegnaye-logo.png'],
+    images: [
+      {
+        url: 'https://www.denbegnayeaiagent.com/denbegnaye-og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Denbegnaye - Build AI Agents Without Limits',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Denbegnaye - Build AI Agents Without Limits',
+    description:
+      'Denbegnaye is a visual AI agent builder for no-code workflow automation, with Office Intelligence tools for analyzing documents and business data.',
+    images: ['https://www.denbegnayeaiagent.com/denbegnaye-og.png'],
   },
   icons: {
     icon: '/denbegnaye-logo.png',
