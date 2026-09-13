@@ -1,15 +1,11 @@
-import { mkdir, writeFile } from 'fs/promises';
-import path from 'path';
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getOfficeIntelligenceUser } from '@/lib/office-intelligence-auth';
+import { getOfficeIntelligenceServiceToken } from '@/lib/office-intelligence-service-auth';
 
 export const runtime = 'nodejs';
 
-const UPLOAD_DIR = path.join(process.cwd(), '.uploads', 'office-intelligence');
-
-function sanitizeFilename(fileName: string) {
-  return fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-}
+const officeIntelligenceUrl = process.env.OFFICE_INTELLIGENCE_URL || 'http://localhost:8000';
 
 export async function GET(request: NextRequest) {
   const user = await getOfficeIntelligenceUser(request);
@@ -19,8 +15,8 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    message: 'Office Intelligence upload endpoint is active.',
-    uploadDirectory: UPLOAD_DIR,
+    message: 'Office Intelligence upload proxy is active.',
+    backend: officeIntelligenceUrl,
   });
 }
 
@@ -31,38 +27,59 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const uploadedFile = formData.get('file');
-
-    if (!(uploadedFile instanceof File)) {
-      return NextResponse.json({ ok: false, error: 'No file was uploaded.' }, { status: 400 });
+    const contentType = request.headers.get('content-type') || '';
+    if (!contentType.toLowerCase().startsWith('multipart/form-data;')) {
+      return NextResponse.json(
+        { ok: false, error: 'A multipart/form-data upload is required.' },
+        { status: 400 }
+      );
     }
 
-    await mkdir(UPLOAD_DIR, { recursive: true });
+    const requestId = request.headers.get('x-request-id') || randomUUID();
+    const serviceToken = getOfficeIntelligenceServiceToken();
+    const response = await fetch(`${officeIntelligenceUrl.replace(/\/$/, '')}/upload-file`, {
+      method: 'POST',
+      headers: {
+        'content-type': contentType,
+        'x-request-id': requestId,
+        ...(request.headers.get('content-length')
+          ? { 'content-length': request.headers.get('content-length')! }
+          : {}),
+        authorization: `Bearer ${serviceToken}`,
+      },
+      body: request.body,
+      duplex: 'half',
+    } as RequestInit & { duplex: 'half' });
 
-    const safeName = `${Date.now()}-${sanitizeFilename(uploadedFile.name)}`;
-    const filePath = path.join(UPLOAD_DIR, safeName);
-    const fileBuffer = Buffer.from(await uploadedFile.arrayBuffer());
+    const responseContentType = response.headers.get('content-type') || '';
+    const payload = responseContentType.includes('application/json')
+      ? await response.json()
+      : { detail: await response.text() };
 
-    await writeFile(filePath, fileBuffer);
+    if (!response.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: payload?.detail || payload?.error || 'Office Intelligence upload failed.',
+          request_id: requestId,
+          details: payload,
+        },
+        { status: response.status }
+      );
+    }
 
-    return NextResponse.json({
-      ok: true,
-      file_name: uploadedFile.name,
-      file_path: filePath,
-      size: fileBuffer.length,
-      type: uploadedFile.type || 'application/octet-stream',
-      uploaded_at: new Date().toISOString(),
+    return NextResponse.json(payload, {
+      headers: { 'x-request-id': requestId },
     });
   } catch (error) {
     console.error('Office Intelligence upload failed:', error);
     return NextResponse.json(
       {
         ok: false,
-        error: 'Failed to store uploaded file.',
+        error: 'Office Intelligence upload service is unavailable.',
         details: error instanceof Error ? error.message : 'Unknown upload error',
       },
-      { status: 500 }
+      { status: 502 }
     );
   }
 }

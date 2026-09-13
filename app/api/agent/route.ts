@@ -1,11 +1,10 @@
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getOfficeIntelligenceUser } from '@/lib/office-intelligence-auth';
+import { getOfficeIntelligenceServiceToken } from '@/lib/office-intelligence-service-auth';
 
-const backendCandidates = [
-  process.env.NEXT_PUBLIC_BACKEND_URL,
-  process.env.BACKEND_URL,
-  'http://localhost:3001',
-].filter(Boolean) as string[];
+const officeIntelligenceUrl = process.env.OFFICE_INTELLIGENCE_URL || 'http://localhost:8000';
+const officeIntelligenceMockEnabled = process.env.OFFICE_INTELLIGENCE_MOCK === 'true';
 
 function createLocalResponse(agentId: string, prompt: string, metadata?: Record<string, unknown>) {
   const normalizedPrompt = prompt.trim();
@@ -52,7 +51,8 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     message: 'Office Intelligence agent endpoint is active.',
-    backends: backendCandidates,
+    backend: officeIntelligenceUrl,
+    mockEnabled: officeIntelligenceMockEnabled,
   });
 }
 
@@ -64,7 +64,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { agent_id, prompt, mode, top_k, use_langchain, ...rest } = body || {};
+    const {
+      agent_id,
+      prompt,
+      mode = 'auto',
+      use_langchain = true,
+      table_csv,
+      table_json,
+      file_path,
+      db_file,
+      top_k = 5,
+      confirm = false,
+    } = body || {};
 
     if (!agent_id || !prompt || !String(prompt).trim()) {
       return NextResponse.json(
@@ -73,57 +84,77 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    for (const backendUrl of backendCandidates) {
-      try {
-        const response = await fetch(`${backendUrl.replace(/\/$/, '')}/api/agent`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(request.headers.get('authorization')
-              ? { authorization: request.headers.get('authorization')! }
-              : {}),
+    const requestId = request.headers.get('x-request-id') || randomUUID();
+    const serviceToken = getOfficeIntelligenceServiceToken();
+    const workerPayload = {
+      agent_id,
+      prompt,
+      mode,
+      use_langchain,
+      table_csv,
+      table_json,
+      file_path,
+      db_file,
+      top_k,
+      confirm,
+    };
+
+    try {
+      const response = await fetch(`${officeIntelligenceUrl.replace(/\/$/, '')}/agent/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-request-id': requestId,
+          authorization: `Bearer ${serviceToken}`,
+        },
+        body: JSON.stringify(workerPayload),
+      });
+
+      const contentType = response.headers.get('content-type') || '';
+      const payload = contentType.includes('application/json')
+        ? await response.json()
+        : { detail: await response.text() };
+
+      if (!response.ok) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: payload?.detail || payload?.error || 'Office Intelligence request failed.',
+            request_id: requestId,
+            details: payload,
           },
-          body: JSON.stringify({
-            agent_id,
-            prompt,
+          { status: response.status }
+        );
+      }
+
+      return NextResponse.json(payload, {
+        headers: { 'x-request-id': requestId },
+      });
+    } catch (error) {
+      console.error('Office Intelligence backend request failed:', error);
+
+      if (officeIntelligenceMockEnabled) {
+        return NextResponse.json(
+          createLocalResponse(String(agent_id), String(prompt), {
             mode,
             top_k,
-            use_langchain,
-            ...rest,
+            use_langchain: Boolean(use_langchain),
+            request_id: requestId,
           }),
-        });
-
-        const contentType = response.headers.get('content-type') || '';
-        const payload = contentType.includes('application/json')
-          ? await response.json()
-          : { answer: await response.text() };
-
-        if (response.ok) {
-          return NextResponse.json(payload);
-        }
-
-        if (response.status !== 404) {
-          return NextResponse.json(
-            {
-              ok: false,
-              error: payload?.error || payload?.detail || 'Backend agent request failed.',
-              details: payload,
-            },
-            { status: response.status }
-          );
-        }
-      } catch (error) {
-        console.warn(`Office Intelligence backend request failed for ${backendUrl}:`, error);
+          { headers: { 'x-request-id': requestId } }
+        );
       }
+
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'Office Intelligence service is unavailable.',
+          request_id: requestId,
+          details: error instanceof Error ? error.message : 'Unknown connection error',
+        },
+        { status: 502, headers: { 'x-request-id': requestId } }
+      );
     }
-
-    const fallback = createLocalResponse(String(agent_id), String(prompt), {
-      mode: mode || 'auto',
-      top_k: top_k || 5,
-      use_langchain: Boolean(use_langchain),
-    });
-
-    return NextResponse.json(fallback, { status: 200 });
   } catch (error) {
     console.error('Office Intelligence agent request failed:', error);
     return NextResponse.json(
