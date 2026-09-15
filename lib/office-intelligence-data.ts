@@ -30,7 +30,7 @@ export const OFFICE_CATEGORIES: Category[] = [
     textOnBg: '#3C3489',
     darkTextOnBg: '#CECBF6',
     lucideIcon: 'FileText',
-    agentCount: 5,
+    agentCount: 0,
   },
   {
     id: 'hr',
@@ -41,7 +41,7 @@ export const OFFICE_CATEGORIES: Category[] = [
     textOnBg: '#0F6E56',
     darkTextOnBg: '#9FE1CB',
     lucideIcon: 'Users',
-    agentCount: 4,
+    agentCount: 0,
   },
   {
     id: 'finance',
@@ -52,7 +52,7 @@ export const OFFICE_CATEGORIES: Category[] = [
     textOnBg: '#854F0B',
     darkTextOnBg: '#FAC775',
     lucideIcon: 'Banknote',
-    agentCount: 6,
+    agentCount: 0,
   },
   {
     id: 'ops',
@@ -63,7 +63,7 @@ export const OFFICE_CATEGORIES: Category[] = [
     textOnBg: '#993C1D',
     darkTextOnBg: '#F5C4B3',
     lucideIcon: 'Settings',
-    agentCount: 4,
+    agentCount: 0,
   },
   {
     id: 'sales',
@@ -74,7 +74,7 @@ export const OFFICE_CATEGORIES: Category[] = [
     textOnBg: '#185FA5',
     darkTextOnBg: '#B5D4F4',
     lucideIcon: 'TrendingUp',
-    agentCount: 4,
+    agentCount: 0,
   },
   {
     id: 'it',
@@ -85,7 +85,7 @@ export const OFFICE_CATEGORIES: Category[] = [
     textOnBg: '#3B6D11',
     darkTextOnBg: '#C0DD97',
     lucideIcon: 'ShieldCheck',
-    agentCount: 4,
+    agentCount: 0,
   },
   {
     id: 'data',
@@ -96,7 +96,7 @@ export const OFFICE_CATEGORIES: Category[] = [
     textOnBg: '#993556',
     darkTextOnBg: '#F4C0D1',
     lucideIcon: 'Database',
-    agentCount: 6,
+    agentCount: 0,
   },
 ];
 
@@ -543,6 +543,10 @@ export const OFFICE_AGENTS: Agent[] = [
 
 export function getCategoryById(id: string): Category | undefined {
   return OFFICE_CATEGORIES.find(c => c.id === id);
+}
+
+export function getAgentCountByCategoryId(categoryId: string): number {
+  return OFFICE_AGENTS.filter(agent => agent.categoryId === categoryId).length;
 }
 
 export function getAgentById(id: string): Agent | undefined {

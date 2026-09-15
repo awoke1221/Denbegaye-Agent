@@ -31,11 +31,11 @@ const authStorage = {
     }
 
     try {
-      const sessionValue = window.sessionStorage.getItem(key);
-      if (sessionValue !== null) {
-        return sessionValue;
-      }
-      return window.localStorage.getItem(key);
+      const preferredStorage =
+        authStorageMode === 'session' ? window.sessionStorage : window.localStorage;
+      const fallbackStorage =
+        authStorageMode === 'session' ? window.localStorage : window.sessionStorage;
+      return preferredStorage.getItem(key) ?? fallbackStorage.getItem(key);
     } catch {
       return null;
     }
@@ -69,7 +69,26 @@ const authStorage = {
 
 export const clearSupabaseAuthStorage = () => {
   const projectRef = new URL(SUPABASE_URL || 'http://localhost').hostname.split('.')[0];
-  authStorage.removeItem(`sb-${projectRef}-auth-token`);
+  const authTokenKey = `sb-${projectRef}-auth-token`;
+
+  authStorage.removeItem(authTokenKey);
+
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    for (const storage of [window.localStorage, window.sessionStorage]) {
+      for (let index = storage.length - 1; index >= 0; index -= 1) {
+        const key = storage.key(index);
+        if (key?.startsWith('sb-') && key.endsWith('-auth-token')) {
+          storage.removeItem(key);
+        }
+      }
+    }
+  } catch {
+    // Ignore browser storage cleanup failures.
+  }
 };
 
 let supabase: SupabaseClient;

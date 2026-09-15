@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { extractAvatarInitials, getUserDisplayName } from '@/lib/avatar-utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -27,6 +27,11 @@ import {
 import { LoadingState } from '@/components/loading-state';
 import { getUserUsage } from '@/lib/rateLimiting';
 import { supabase } from '@/lib/supabaseClient';
+import {
+  OFFICE_AGENTS,
+  OFFICE_CATEGORIES,
+  getAgentCountByCategoryId,
+} from '@/lib/office-intelligence-data';
 
 interface Subscription {
   plan_name: string;
@@ -49,9 +54,10 @@ export default function ProfilePage() {
   const { user, loading, signOut } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [usageStats, setUsageStats] = useState<UsageStats>({});
-  const [loadingData, setLoadingData] = useState(true);
   const [canceling, setCanceling] = useState(false);
   const [cancelMessage, setCancelMessage] = useState<string | null>(null);
+  const [officeRecentCount, setOfficeRecentCount] = useState(0);
+  const [officeFavoriteCount, setOfficeFavoriteCount] = useState(0);
 
   useEffect(() => {
     const fetchSubscriptionData = async () => {
@@ -88,12 +94,27 @@ export default function ProfilePage() {
       } catch (error) {
         console.error('Error fetching subscription data:', error);
       } finally {
-        setLoadingData(false);
       }
     };
 
     if (user) {
       fetchSubscriptionData();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    try {
+      const recent = window.localStorage.getItem(`office-intelligence-sessions:${user.id}`);
+      const favorites = window.localStorage.getItem(`office-intelligence-favorites:${user.id}`);
+      const parsedRecent = recent ? JSON.parse(recent) : [];
+      const parsedFavorites = favorites ? JSON.parse(favorites) : [];
+      setOfficeRecentCount(Array.isArray(parsedRecent) ? parsedRecent.length : 0);
+      setOfficeFavoriteCount(Array.isArray(parsedFavorites) ? parsedFavorites.length : 0);
+    } catch {
+      setOfficeRecentCount(0);
+      setOfficeFavoriteCount(0);
     }
   }, [user]);
 
@@ -274,6 +295,69 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <Separator className="bg-[var(--border-default)]" />
+
+                <div>
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="flex items-center text-lg font-semibold text-[var(--text-primary)]">
+                        <Bot className="mr-2 h-5 w-5 text-[var(--text-primary)]" />
+                        Office Intelligence
+                      </h3>
+                      <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                        Your signed-in workspace activity and available analysis categories.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => router.push('/office-intelligence')}
+                      className="bg-[var(--button-bg)] text-[var(--button-text)]"
+                    >
+                      Open workspace
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="mb-4 grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-4">
+                      <div className="text-xs uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+                        Recent sessions
+                      </div>
+                      <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
+                        {officeRecentCount}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-4">
+                      <div className="text-xs uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+                        Favorite agents
+                      </div>
+                      <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
+                        {officeFavoriteCount}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {OFFICE_CATEGORIES.map(category => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => router.push(`/office-intelligence?category=${category.id}`)}
+                        className="rounded-2xl border border-[var(--border-default)] bg-[rgba(255,255,255,0.55)] p-4 text-left transition-colors hover:bg-[var(--bg-hover)]"
+                      >
+                        <div className="font-semibold text-[var(--text-primary)]">
+                          {category.name}
+                        </div>
+                        <div className="mt-1 text-sm text-[var(--text-secondary)]">
+                          {getAgentCountByCategoryId(category.id)} agents available
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs text-[var(--text-tertiary)]">
+                    {OFFICE_AGENTS.length} analysis agents are available in your workspace.
+                  </p>
                 </div>
 
                 <Separator className="bg-[var(--border-default)]" />

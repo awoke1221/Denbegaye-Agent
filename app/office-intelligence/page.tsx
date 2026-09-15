@@ -1,10 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Bell,
   Home,
   LayoutGrid,
   Clock,
@@ -13,6 +10,7 @@ import {
   Plus,
   Search,
   Sun,
+  Star,
   Cpu,
   FileText,
   Users,
@@ -27,6 +25,7 @@ import { supabase } from '@/lib/supabaseClient';
 import {
   OFFICE_AGENTS,
   OFFICE_CATEGORIES,
+  getAgentCountByCategoryId,
   getCategoryById,
   getAgentById,
 } from '@/lib/office-intelligence-data';
@@ -51,7 +50,19 @@ const categoryToneMap: Record<
     iconColor: '#6a5ad8',
     cardBg: '#f8f6ff',
   },
+  docs: {
+    dot: '#8a72f2',
+    iconBg: '#f0ebff',
+    iconColor: '#6a5ad8',
+    cardBg: '#f8f6ff',
+  },
   'hr-people': {
+    dot: '#58bba1',
+    iconBg: '#eafaf4',
+    iconColor: '#2f9b7f',
+    cardBg: '#f7fffb',
+  },
+  hr: {
     dot: '#58bba1',
     iconBg: '#eafaf4',
     iconColor: '#2f9b7f',
@@ -69,7 +80,19 @@ const categoryToneMap: Record<
     iconColor: '#c35b3d',
     cardBg: '#fffaf8',
   },
+  ops: {
+    dot: '#e07a5f',
+    iconBg: '#fff0ec',
+    iconColor: '#c35b3d',
+    cardBg: '#fffaf8',
+  },
   'sales-mktg': {
+    dot: '#5fa8e7',
+    iconBg: '#edf6ff',
+    iconColor: '#3d84c7',
+    cardBg: '#f7fbff',
+  },
+  sales: {
     dot: '#5fa8e7',
     iconBg: '#edf6ff',
     iconColor: '#3d84c7',
@@ -81,7 +104,19 @@ const categoryToneMap: Record<
     iconColor: '#3a9d5d',
     cardBg: '#f8fff9',
   },
+  it: {
+    dot: '#63bb79',
+    iconBg: '#edf9ef',
+    iconColor: '#3a9d5d',
+    cardBg: '#f8fff9',
+  },
   'data-analytics': {
+    dot: '#de7da7',
+    iconBg: '#fdeef7',
+    iconColor: '#c55b88',
+    cardBg: '#fff9fc',
+  },
+  data: {
     dot: '#de7da7',
     iconBg: '#fdeef7',
     iconColor: '#c55b88',
@@ -117,13 +152,16 @@ export type Session = {
 const seedSessions: Session[] = [];
 
 export default function OfficeIntelligencePage() {
-  const router = useRouter();
   const { user } = useAuth();
   const [selectedCategoryId, setSelectedCategory] = useState<string | null>(null);
   const [activeAgentId, setActiveAgent] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sessions] = useState<Session[]>(seedSessions);
+  const [sessions, setSessions] = useState<Session[]>(seedSessions);
+  const [sessionsReady, setSessionsReady] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'recent' | 'favorites'>('all');
+  const [activePanel, setActivePanel] = useState<'chat' | 'data' | 'chart'>('chat');
+  const [favoriteAgentIds, setFavoriteAgentIds] = useState<string[]>([]);
+  const [favoritesReady, setFavoritesReady] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [chatMessages, setChatMessages] = useState<Record<string, Message[]>>(
     () =>
@@ -140,11 +178,20 @@ export default function OfficeIntelligencePage() {
   }, [searchQuery]);
 
   const hubAgents = useMemo(() => {
-    if (selectedCategoryId) {
-      return OFFICE_AGENTS.filter(agent => agent.categoryId === selectedCategoryId);
+    const categoryAgents = selectedCategoryId
+      ? OFFICE_AGENTS.filter(agent => agent.categoryId === selectedCategoryId)
+      : OFFICE_AGENTS;
+
+    if (activeTab === 'favorites') {
+      return categoryAgents.filter(agent => favoriteAgentIds.includes(agent.id));
     }
-    return OFFICE_AGENTS;
-  }, [selectedCategoryId]);
+
+    if (activeTab === 'recent') {
+      return categoryAgents.filter(agent => sessions.some(session => session.agentId === agent.id));
+    }
+
+    return categoryAgents;
+  }, [activeTab, favoriteAgentIds, selectedCategoryId, sessions]);
 
   const activeAgent = activeAgentId ? getAgentById(activeAgentId) : undefined;
   const activeCategory = activeAgent ? getCategoryById(activeAgent.categoryId) : undefined;
@@ -163,6 +210,65 @@ export default function OfficeIntelligencePage() {
     .map(part => part[0]?.toUpperCase())
     .join('');
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const sessionsStorageKey = user ? `office-intelligence-sessions:${user.id}` : null;
+  const favoritesStorageKey = user ? `office-intelligence-favorites:${user.id}` : null;
+  const hydratedSessionsKey = useRef<string | null>(null);
+  const hydratedFavoritesKey = useRef<string | null>(null);
+  const appliedQueryCategory = useRef<string | null>(null);
+
+  const openAgentHub = () => {
+    setSearchQuery('');
+    setActiveAgent(null);
+    setSelectedCategory(null);
+    setActiveTab('all');
+  };
+
+  const openCategory = (categoryId: string) => {
+    setSearchQuery('');
+    setActiveAgent(null);
+    setSelectedCategory(categoryId);
+    setActiveTab('all');
+  };
+
+  const openAgentCollection = (tab: 'all' | 'recent' | 'favorites') => {
+    setSearchQuery('');
+    setActiveAgent(null);
+    setSelectedCategory(null);
+    setActiveTab(tab);
+  };
+
+  const openAgent = (agentId: string) => {
+    const agent = getAgentById(agentId);
+    setSearchQuery('');
+    setActiveAgent(agentId);
+    setSelectedCategory(agent?.categoryId ?? null);
+    setActiveTab('all');
+    setSessions(current => {
+      const existing = current.find(session => session.agentId === agentId);
+      const nextSession: Session = {
+        id: existing?.id ?? `${Date.now()}-${agentId}`,
+        agentId,
+        title: agent?.name || 'Office Intelligence session',
+        meta: 'Active session',
+        time: 'Just now',
+      };
+      return [nextSession, ...current.filter(session => session.agentId !== agentId)];
+    });
+  };
+
+  useEffect(() => {
+    const categoryId = new URLSearchParams(window.location.search).get('category');
+    if (
+      !categoryId ||
+      appliedQueryCategory.current === categoryId ||
+      !OFFICE_CATEGORIES.some(category => category.id === categoryId)
+    ) {
+      return;
+    }
+
+    appliedQueryCategory.current = categoryId;
+    openCategory(categoryId);
+  }, []);
 
   const getAuthHeaders = async (): Promise<Record<string, string>> => {
     const { data } = await supabase.auth.getSession();
@@ -176,6 +282,66 @@ export default function OfficeIntelligencePage() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!sessionsStorageKey || hydratedSessionsKey.current === sessionsStorageKey) return;
+
+    setSessionsReady(false);
+
+    try {
+      const savedSessions = window.localStorage.getItem(sessionsStorageKey);
+      if (savedSessions) {
+        const parsedSessions = JSON.parse(savedSessions) as Session[];
+        setSessions(Array.isArray(parsedSessions) ? parsedSessions : []);
+      }
+    } catch {
+      setSessions([]);
+    } finally {
+      hydratedSessionsKey.current = sessionsStorageKey;
+      setSessionsReady(true);
+    }
+  }, [sessionsStorageKey]);
+
+  useEffect(() => {
+    if (!sessionsStorageKey || !sessionsReady) return;
+
+    try {
+      window.localStorage.setItem(sessionsStorageKey, JSON.stringify(sessions));
+    } catch {
+      // Recent sessions remain available for the current page when storage is unavailable.
+    }
+  }, [sessions, sessionsReady, sessionsStorageKey]);
+
+  useEffect(() => {
+    if (!favoritesStorageKey || hydratedFavoritesKey.current === favoritesStorageKey) return;
+
+    setFavoritesReady(false);
+
+    try {
+      const savedFavorites = window.localStorage.getItem(favoritesStorageKey);
+      if (savedFavorites) {
+        const parsedFavorites = JSON.parse(savedFavorites) as string[];
+        setFavoriteAgentIds(Array.isArray(parsedFavorites) ? parsedFavorites : []);
+      } else {
+        setFavoriteAgentIds([]);
+      }
+    } catch {
+      setFavoriteAgentIds([]);
+    } finally {
+      hydratedFavoritesKey.current = favoritesStorageKey;
+      setFavoritesReady(true);
+    }
+  }, [favoritesStorageKey]);
+
+  useEffect(() => {
+    if (!favoritesStorageKey || !favoritesReady) return;
+
+    try {
+      window.localStorage.setItem(favoritesStorageKey, JSON.stringify(favoriteAgentIds));
+    } catch {
+      // Favorites remain available for the current page when storage is unavailable.
+    }
+  }, [favoriteAgentIds, favoritesReady, favoritesStorageKey]);
 
   const toggleTheme = () => {
     setTheme(current => {
@@ -199,7 +365,7 @@ export default function OfficeIntelligencePage() {
     }));
 
     const uploadedFile = uploadedFiles[agentId];
-    const agent = getAgentById(agentId);
+    openAgent(agentId);
 
     if ((agentId === 'csv-analyst' || agentId === 'financial-data') && !uploadedFile) {
       setChatMessages(current => ({
@@ -321,7 +487,7 @@ export default function OfficeIntelligencePage() {
 
   const handleFileUpload = async (agentId: string, file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase();
-    const isDbFile = ext === 'db' || ext === 'sqlite' || ext === 'sqlite3';
+    const isDbFile = ext === 'db' || ext === 'sqlite' || ext === 'sqlite3' || ext === 'sql';
     const isWordDocument = ext === 'docx';
 
     if (isDbFile) {
@@ -430,26 +596,55 @@ export default function OfficeIntelligencePage() {
       }
     }
 
-    const uploaded: UploadedFile = {
-      name: file.name,
-      size: `${Math.round(file.size / 1024)} KB`,
-      type: file.type || 'application/octet-stream',
-      content: 'file-uploaded',
-    };
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch('/api/upload-file', {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || data.error || 'Failed to upload file.');
+      }
 
-    setUploadedFiles(current => ({ ...current, [agentId]: uploaded }));
-    setChatMessages(current => ({
-      ...current,
-      [agentId]: [
-        ...(current[agentId] || []),
-        {
-          id: `${Date.now()}-user-upload`,
-          role: 'user',
-          content: `Uploaded file: ${file.name}`,
-          timestamp: new Date(),
+      setUploadedFiles(current => ({
+        ...current,
+        [agentId]: {
+          name: file.name,
+          size: `${Math.round(file.size / 1024)} KB`,
+          type: file.type || 'application/octet-stream',
+          content: data.file_path,
         },
-      ],
-    }));
+      }));
+      setChatMessages(current => ({
+        ...current,
+        [agentId]: [
+          ...(current[agentId] || []),
+          {
+            id: `${Date.now()}-user-upload`,
+            role: 'user',
+            content: `Uploaded file: ${file.name}`,
+            timestamp: new Date(),
+          },
+        ],
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setChatMessages(current => ({
+        ...current,
+        [agentId]: [
+          ...(current[agentId] || []),
+          {
+            id: `${Date.now()}-assistant-upload-error`,
+            role: 'assistant',
+            content: `Failed to upload file: ${message}`,
+            timestamp: new Date(),
+          },
+        ],
+      }));
+    }
   };
 
   return (
@@ -482,21 +677,23 @@ export default function OfficeIntelligencePage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {searchQuery && filteredAgents.length > 0 ? (
+            {searchQuery ? (
               <div className="p-2">
-                {filteredAgents.map(agent => (
-                  <button
-                    key={agent.id}
-                    onClick={() => {
-                      setSearchQuery('');
-                      setActiveAgent(agent.id);
-                      setSelectedCategory(agent.categoryId);
-                    }}
-                    className="w-full text-left text-xs px-3.5 py-1.5 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors duration-150 rounded-sm flex items-center gap-2"
-                  >
-                    <span className="truncate">{agent.name}</span>
-                  </button>
-                ))}
+                {filteredAgents.length > 0 ? (
+                  filteredAgents.map(agent => (
+                    <button
+                      key={agent.id}
+                      onClick={() => openAgent(agent.id)}
+                      className="w-full text-left text-xs px-3.5 py-1.5 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors duration-150 rounded-sm flex items-center gap-2"
+                    >
+                      <span className="truncate">{agent.name}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
+                    No agents found.
+                  </div>
+                )}
               </div>
             ) : (
               <>
@@ -504,27 +701,25 @@ export default function OfficeIntelligencePage() {
                   <div className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--text-tertiary)] mb-2">
                     Workspace
                   </div>
-                  <Link
-                    href="/"
-                    onClick={() => {
-                      setSelectedCategory(null);
-                      setActiveAgent(null);
-                    }}
+                  <button
+                    type="button"
+                    onClick={openAgentHub}
                     className={`flex items-center gap-2 px-3.5 py-2 text-[12px] rounded-[8px] transition-colors duration-100 w-full text-left ${!selectedCategoryId && !activeAgentId ? 'bg-[#f3efe9] text-[#1e1e1e] font-medium' : 'text-[#5b5852] hover:bg-[#f3efe9] hover:text-[#1e1e1e]'}`}
                   >
                     <LayoutGrid className="w-3.5 h-3.5" />
                     <span>Agent hub</span>
-                  </Link>
-                  <Link
-                    href="/recent"
-                    className="flex items-center gap-2 px-3.5 py-2 text-[12px] rounded-[8px] transition-colors duration-100 relative w-full text-left text-[#5b5852] hover:bg-[#f3efe9] hover:text-[#1e1e1e]"
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openAgentCollection('recent')}
+                    className={`flex items-center gap-2 px-3.5 py-2 text-[12px] rounded-[8px] transition-colors duration-100 relative w-full text-left ${activeTab === 'recent' && !activeAgentId ? 'bg-[#f3efe9] text-[#1e1e1e] font-medium' : 'text-[#5b5852] hover:bg-[#f3efe9] hover:text-[#1e1e1e]'}`}
                   >
                     <Clock className="w-3.5 h-3.5" />
                     <span className="flex-1">Recent sessions</span>
                     <div className="rounded-full text-[10px] px-1.5 py-0.5 flex-shrink-0 bg-[#f7f4f1] text-[#5b5852] border border-[#d7d0c8]">
                       {sessions.length}
                     </div>
-                  </Link>
+                  </button>
                 </div>
 
                 <div className="px-3.5 pt-3 pb-1">
@@ -532,16 +727,11 @@ export default function OfficeIntelligencePage() {
                     Categories
                   </div>
                   {OFFICE_CATEGORIES.map(category => {
-                    const IconComponent = iconMap[category.lucideIcon];
                     const tone = categoryToneMap[category.id] ?? categoryToneMap.documents;
                     return (
                       <button
                         key={category.id}
-                        onClick={() =>
-                          setSelectedCategory(
-                            selectedCategoryId === category.id ? null : category.id
-                          )
-                        }
+                        onClick={() => openCategory(category.id)}
                         className={`w-full flex items-center gap-2 px-3.5 py-2 text-[12px] rounded-[8px] transition-colors duration-100 border ${selectedCategoryId === category.id ? 'border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-primary)]' : 'border-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'}`}
                       >
                         <div
@@ -567,10 +757,7 @@ export default function OfficeIntelligencePage() {
                       return (
                         <button
                           key={session.id}
-                          onClick={() => {
-                            setActiveAgent(session.agentId);
-                            setSelectedCategory(agent?.categoryId ?? null);
-                          }}
+                          onClick={() => openAgent(session.agentId)}
                           className="w-full flex items-center gap-2 px-3.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors duration-150 rounded-none"
                         >
                           {IconComponent && (
@@ -603,9 +790,6 @@ export default function OfficeIntelligencePage() {
                   {user?.email || 'Signed in'}
                 </div>
               </div>
-              <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0">
-                <Settings className="w-3.5 h-3.5" />
-              </button>
             </div>
           </div>
         </aside>
@@ -615,14 +799,21 @@ export default function OfficeIntelligencePage() {
             <div className="text-[24px] font-semibold tracking-[-0.04em] text-[#1d1d1d] flex-1">
               {activeAgent ? activeAgent.name : (selectedCategoryName ?? 'AgentSuite')}
             </div>
-            <button className="text-[12px] px-3 py-2 rounded-[8px] border border-[var(--border-default)] bg-[var(--bg-soft)] hover:bg-[var(--bg-hover)] transition-colors flex items-center gap-2 text-[var(--text-primary)]">
+            <button
+              onClick={() => {
+                setActiveAgent(null);
+                setSelectedCategory(null);
+                setActiveTab('all');
+              }}
+              className="text-[12px] px-3 py-2 rounded-[8px] border border-[var(--border-default)] bg-[var(--bg-soft)] hover:bg-[var(--bg-hover)] transition-colors flex items-center gap-2 text-[var(--text-primary)]"
+            >
               <Plus className="w-3.5 h-3.5" /> New session
             </button>
-            <button className="w-8 h-8 rounded-[8px] hover:bg-[#efebe6] transition-colors flex items-center justify-center text-[#4a4945] border border-transparent">
-              <Bell className="w-4 h-4" />
-            </button>
             <button
-              onClick={() => router.push('/')}
+              type="button"
+              aria-label="Return to Agent hub"
+              title="Return to Agent hub"
+              onClick={openAgentHub}
               className="w-8 h-8 rounded-[8px] hover:bg-[#efebe6] transition-colors flex items-center justify-center text-[#4a4945]"
             >
               <Home className="w-4 h-4" />
@@ -647,7 +838,7 @@ export default function OfficeIntelligencePage() {
                   return (
                     <button
                       key={label}
-                      onClick={() => setActiveTab(currentTab)}
+                      onClick={() => openAgentCollection(currentTab)}
                       className={`text-[13px] px-3.5 py-3 border-b-[2px] transition-colors duration-100 ${isActive ? 'font-medium text-[#1e1e1e] border-[#6ab4a3] bg-[#f7f4f1]' : 'text-[#5b5852] border-transparent hover:text-[#1e1e1e]'}`}
                     >
                       {label}
@@ -664,16 +855,12 @@ export default function OfficeIntelligencePage() {
                   className="grid gap-2.5"
                   style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}
                 >
-                  {OFFICE_CATEGORIES.map((category, idx) => {
+                  {OFFICE_CATEGORIES.map(category => {
                     const tone = categoryToneMap[category.id] ?? categoryToneMap.documents;
                     return (
                       <div key={category.id} className="transition-all duration-150">
                         <button
-                          onClick={() =>
-                            setSelectedCategory(
-                              selectedCategoryId === category.id ? null : category.id
-                            )
-                          }
+                          onClick={() => openCategory(category.id)}
                           className="w-full rounded-[12px] border border-[var(--border-default)] bg-[var(--bg-subtle)] p-3.5 text-left transition-all duration-150 hover:border-[var(--border-strong)] hover:bg-[var(--bg-hover)]"
                           style={
                             selectedCategoryId === category.id
@@ -696,14 +883,14 @@ export default function OfficeIntelligencePage() {
                               })()}
                             </div>
                             <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#7a7671]">
-                              {category.agentCount} tools
+                              {getAgentCountByCategoryId(category.id)} tools
                             </span>
                           </div>
                           <div className="text-[15px] font-medium text-[#1d1d1d] mb-0.5">
                             {category.name}
                           </div>
                           <div className="text-[11px] text-[#6f6c67]">
-                            {category.agentCount} agents
+                            {getAgentCountByCategoryId(category.id)} agents
                           </div>
                         </button>
                       </div>
@@ -726,28 +913,30 @@ export default function OfficeIntelligencePage() {
                   className="grid gap-3"
                   style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}
                 >
-                  {hubAgents.map((agent, idx) => {
+                  {hubAgents.map(agent => {
                     const category = getCategoryById(agent.categoryId);
                     const tone = category
                       ? (categoryToneMap[category.id] ?? categoryToneMap.documents)
                       : categoryToneMap.documents;
                     return (
-                      <div key={agent.id} className="transition-all duration-150">
+                      <div
+                        key={agent.id}
+                        className="w-full rounded-[12px] p-3 flex items-start gap-3 transition-all duration-150 text-left bg-[var(--bg-subtle)] border border-[var(--border-default)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-hover)]"
+                        style={
+                          activeAgentId === agent.id
+                            ? {
+                                backgroundColor: '#f5f2ee',
+                                borderColor: '#d0c7bf',
+                                boxShadow: 'inset 0 0 0 1px rgba(17,24,39,0.02)',
+                              }
+                            : undefined
+                        }
+                      >
                         <button
                           onClick={() => {
-                            setActiveAgent(agent.id);
-                            setSelectedCategory(agent.categoryId);
+                            openAgent(agent.id);
                           }}
-                          className="w-full rounded-[12px] p-3 flex items-start gap-3 cursor-pointer transition-all duration-150 text-left bg-[var(--bg-subtle)] border border-[var(--border-default)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-hover)]"
-                          style={
-                            activeAgentId === agent.id
-                              ? {
-                                  backgroundColor: '#f5f2ee',
-                                  borderColor: '#d0c7bf',
-                                  boxShadow: 'inset 0 0 0 1px rgba(17,24,39,0.02)',
-                                }
-                              : undefined
-                          }
+                          className="min-w-0 flex-1 text-left"
                         >
                           <div
                             className="w-8 h-8 rounded-[7px] flex-shrink-0 flex items-center justify-center border border-[#e5dfd7]"
@@ -755,7 +944,7 @@ export default function OfficeIntelligencePage() {
                           >
                             <Cpu className="w-4 h-4" />
                           </div>
-                          <div className="min-w-0 flex-1">
+                          <div className="min-w-0">
                             <div className="text-[13px] font-medium text-[#1d1d1d] leading-tight mb-1">
                               {agent.name}
                             </div>
@@ -764,9 +953,54 @@ export default function OfficeIntelligencePage() {
                             </div>
                           </div>
                         </button>
+                        <button
+                          type="button"
+                          aria-label={
+                            favoriteAgentIds.includes(agent.id)
+                              ? `Remove ${agent.name} from favorites`
+                              : `Add ${agent.name} to favorites`
+                          }
+                          onClick={event => {
+                            event.stopPropagation();
+                            setFavoriteAgentIds(current =>
+                              current.includes(agent.id)
+                                ? current.filter(id => id !== agent.id)
+                                : [...current, agent.id]
+                            );
+                          }}
+                          className="shrink-0 p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                        >
+                          <Star
+                            className="h-3.5 w-3.5"
+                            fill={favoriteAgentIds.includes(agent.id) ? 'currentColor' : 'none'}
+                          />
+                        </button>
                       </div>
                     );
                   })}
+                  {hubAgents.length === 0 && (
+                    <div className="col-span-full rounded-[12px] border border-dashed border-[var(--border-default)] bg-[var(--bg-subtle)] px-5 py-8 text-center">
+                      <div className="text-[13px] font-medium text-[var(--text-primary)]">
+                        {activeTab === 'recent'
+                          ? 'No recent sessions yet'
+                          : 'No favorite agents yet'}
+                      </div>
+                      <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+                        {activeTab === 'recent'
+                          ? 'Open an agent and send a question to see it here.'
+                          : 'Use the star on an agent to add it to Favorites.'}
+                      </div>
+                      {activeTab === 'recent' && (
+                        <button
+                          type="button"
+                          onClick={openAgentHub}
+                          className="mt-3 rounded-md border border-[var(--border-default)] bg-[var(--bg-page)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                        >
+                          Browse all agents
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </section>
             </div>
@@ -784,13 +1018,22 @@ export default function OfficeIntelligencePage() {
                 </div>
 
                 <div className="px-4 py-2 border-b border-[var(--border-default)] flex items-center gap-2 bg-[var(--bg-surface)]">
-                  <button className="text-sm px-3 py-1 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-subtle)] transition-colors duration-150">
+                  <button
+                    onClick={() => setActivePanel('data')}
+                    className={`text-sm px-3 py-1 rounded-full transition-colors duration-150 ${activePanel === 'data' ? 'border border-[var(--border-default)] bg-[var(--bg-page)] text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-subtle)]'}`}
+                  >
                     🔍 Data Preview
                   </button>
-                  <button className="text-sm px-3 py-1 rounded-full border border-[var(--border-default)] bg-[var(--bg-page)] text-[var(--text-primary)] transition-all duration-150">
+                  <button
+                    onClick={() => setActivePanel('chat')}
+                    className={`text-sm px-3 py-1 rounded-full transition-all duration-150 ${activePanel === 'chat' ? 'border border-[var(--border-default)] bg-[var(--bg-page)] text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-subtle)]'}`}
+                  >
                     💬 Chat with Data
                   </button>
-                  <button className="relative text-sm px-3 py-1 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-subtle)] transition-colors duration-150 leading-none">
+                  <button
+                    onClick={() => setActivePanel('chart')}
+                    className={`relative text-sm px-3 py-1 rounded-full transition-colors duration-150 leading-none ${activePanel === 'chart' ? 'border border-[var(--border-default)] bg-[var(--bg-page)] text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-subtle)]'}`}
+                  >
                     📈 Chart Preview
                     {chartMessages.length > 0 ? (
                       <span className="absolute top-0 right-0 -mt-1 -mr-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold text-[var(--text-primary)] bg-[var(--bg-subtle)] border border-[var(--border-default)]">
@@ -800,86 +1043,129 @@ export default function OfficeIntelligencePage() {
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2.5 bg-[var(--bg-page)]">
-                  {activeMessages.length === 0 ? (
-                    <div className="max-w-[88%] self-start flex flex-col">
-                      <div className="text-[10px] text-[var(--text-tertiary)] mb-1 pl-1">agent</div>
-                      <div className="text-[13px] text-[var(--text-primary)] leading-relaxed rounded-[10px] px-3 py-2 border-l-2 border-[var(--border-strong)] bg-[var(--bg-subtle)]">
-                        Hi! I'm your {activeCategory?.name}. Upload a file in the panel on the
-                        right, then ask me anything — I'll write and execute Python to answer.
-                      </div>
+                {activePanel === 'data' ? (
+                  <div className="flex-1 overflow-y-auto p-4 bg-[var(--bg-page)]">
+                    <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 text-sm text-[var(--text-secondary)]">
+                      {uploadedFiles[activeAgentId!] ? (
+                        <>
+                          <div className="font-medium text-[var(--text-primary)]">
+                            {uploadedFiles[activeAgentId!]?.name}
+                          </div>
+                          <div className="mt-1">{uploadedFiles[activeAgentId!]?.size}</div>
+                          <div className="mt-3 text-xs text-[var(--text-tertiary)]">
+                            This file is ready to use with {activeAgent?.name}.
+                          </div>
+                        </>
+                      ) : (
+                        'Upload a file to preview its data source here.'
+                      )}
                     </div>
-                  ) : (
-                    activeMessages.map(message => (
-                      <div
-                        key={message.id}
-                        className={`max-w-[88%] ${message.role === 'user' ? 'self-end' : 'self-start'}`}
-                      >
-                        <div className="text-[10px] text-[var(--text-tertiary)] mb-1 pl-1">
-                          {message.role === 'user' ? 'you' : 'agent'}
-                        </div>
-                        <div
-                          className="text-[13px] text-[var(--text-primary)] leading-relaxed rounded-[10px] px-3 py-2 border-l-2 border-[var(--border-strong)]"
-                          style={{
-                            backgroundColor:
-                              message.role === 'user' ? 'var(--bg-page)' : 'var(--bg-page)',
-                          }}
-                        >
-                          {message.content}
-                          {message.chart ? (
-                            <img
-                              src={message.chart}
-                              alt="Chart preview"
-                              className="mt-3 max-w-full rounded-lg border border-[var(--border-default)]"
-                            />
-                          ) : null}
-                        </div>
-                      </div>
-                    ))
-                  )}
-
-                  {isLoading && (
-                    <div className="max-w-[60%] self-start flex flex-col">
-                      <div className="text-[10px] text-[var(--text-tertiary)] mb-1 pl-1">agent</div>
-                      <div className="text-[13px] leading-relaxed rounded-[10px] px-3 py-2 border-l-2 bg-[var(--bg-page)] border-[var(--border-strong)]">
-                        <div className="flex items-center gap-2">
-                          <div className="h-3 w-3 rounded-full bg-[var(--text-tertiary)] animate-pulse" />
-                          <div className="text-[13px] text-[var(--text-primary)]">Analyzing…</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t border-[var(--border-default)] p-3 bg-[var(--bg-surface)]">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Ask a question..."
-                      onKeyDown={event => {
-                        if (event.key === 'Enter' && event.currentTarget.value.trim()) {
-                          handleSendMessage(activeAgentId!, event.currentTarget.value.trim());
-                          event.currentTarget.value = '';
-                        }
-                      }}
-                      className="flex-1 rounded-md border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-strong)]"
-                    />
-                    <button
-                      onClick={() => {
-                        const input = document.querySelector<HTMLInputElement>('#office-input');
-                        const value = input?.value.trim();
-                        if (value && activeAgentId && input) {
-                          handleSendMessage(activeAgentId, value);
-                          input.value = '';
-                        }
-                      }}
-                      className="rounded-md px-3 py-2 text-sm font-medium bg-[var(--bg-subtle)] text-[var(--text-primary)] border border-[var(--border-default)]"
-                    >
-                      Send
-                    </button>
                   </div>
-                  <input id="office-input" className="hidden" />
-                </div>
+                ) : activePanel === 'chart' ? (
+                  <div className="flex-1 overflow-y-auto p-4 bg-[var(--bg-page)]">
+                    {chartMessages.length > 0 ? (
+                      chartMessages.map(message => (
+                        <img
+                          key={message.id}
+                          src={message.chart!}
+                          alt="Chart preview"
+                          className="mb-3 max-w-full rounded-lg border border-[var(--border-default)]"
+                        />
+                      ))
+                    ) : (
+                      <div className="text-sm text-[var(--text-tertiary)]">
+                        Charts returned by the agent will appear here.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2.5 bg-[var(--bg-page)]">
+                    {activeMessages.length === 0 ? (
+                      <div className="max-w-[88%] self-start flex flex-col">
+                        <div className="text-[10px] text-[var(--text-tertiary)] mb-1 pl-1">
+                          agent
+                        </div>
+                        <div className="text-[13px] text-[var(--text-primary)] leading-relaxed rounded-[10px] px-3 py-2 border-l-2 border-[var(--border-strong)] bg-[var(--bg-subtle)]">
+                          Hi! I'm your {activeCategory?.name}. Upload a file in the panel on the
+                          right, then ask me anything — I'll write and execute Python to answer.
+                        </div>
+                      </div>
+                    ) : (
+                      activeMessages.map(message => (
+                        <div
+                          key={message.id}
+                          className={`max-w-[88%] ${message.role === 'user' ? 'self-end' : 'self-start'}`}
+                        >
+                          <div className="text-[10px] text-[var(--text-tertiary)] mb-1 pl-1">
+                            {message.role === 'user' ? 'you' : 'agent'}
+                          </div>
+                          <div
+                            className="text-[13px] text-[var(--text-primary)] leading-relaxed rounded-[10px] px-3 py-2 border-l-2 border-[var(--border-strong)]"
+                            style={{
+                              backgroundColor:
+                                message.role === 'user' ? 'var(--bg-page)' : 'var(--bg-page)',
+                            }}
+                          >
+                            {message.content}
+                            {message.chart ? (
+                              <img
+                                src={message.chart}
+                                alt="Chart preview"
+                                className="mt-3 max-w-full rounded-lg border border-[var(--border-default)]"
+                              />
+                            ) : null}
+                          </div>
+                        </div>
+                      ))
+                    )}
+
+                    {isLoading && (
+                      <div className="max-w-[60%] self-start flex flex-col">
+                        <div className="text-[10px] text-[var(--text-tertiary)] mb-1 pl-1">
+                          agent
+                        </div>
+                        <div className="text-[13px] leading-relaxed rounded-[10px] px-3 py-2 border-l-2 bg-[var(--bg-page)] border-[var(--border-strong)]">
+                          <div className="flex items-center gap-2">
+                            <div className="h-3 w-3 rounded-full bg-[var(--text-tertiary)] animate-pulse" />
+                            <div className="text-[13px] text-[var(--text-primary)]">Analyzing…</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activePanel === 'chat' && (
+                  <div className="border-t border-[var(--border-default)] p-3 bg-[var(--bg-surface)]">
+                    <div className="flex gap-2">
+                      <input
+                        id="office-input"
+                        type="text"
+                        placeholder="Ask a question..."
+                        onKeyDown={event => {
+                          if (event.key === 'Enter' && event.currentTarget.value.trim()) {
+                            handleSendMessage(activeAgentId!, event.currentTarget.value.trim());
+                            event.currentTarget.value = '';
+                          }
+                        }}
+                        className="flex-1 rounded-md border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-strong)]"
+                      />
+                      <button
+                        onClick={() => {
+                          const input = document.querySelector<HTMLInputElement>('#office-input');
+                          const value = input?.value.trim();
+                          if (value && activeAgentId && input) {
+                            handleSendMessage(activeAgentId, value);
+                            input.value = '';
+                          }
+                        }}
+                        className="rounded-md px-3 py-2 text-sm font-medium bg-[var(--bg-subtle)] text-[var(--text-primary)] border border-[var(--border-default)]"
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <aside className="w-[260px] min-w-[260px] flex flex-col overflow-hidden">
