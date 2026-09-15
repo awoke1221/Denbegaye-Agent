@@ -412,6 +412,13 @@ export default function ProfilePage() {
                         <TrendingUp className="mr-2 h-4 w-4" />
                         Manage Subscription
                       </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => router.push('/office-intelligence/dashboard')}
+                        className="border-[var(--border-default)] bg-[rgba(255,255,255,0.65)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                      >
+                        Dashboard
+                      </Button>
                       {subscription?.plan_tier !== 'free' && subscription?.status === 'active' && (
                         <Button
                           variant="outline"

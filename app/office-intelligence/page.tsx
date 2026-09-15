@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import {
   Home,
+  LayoutDashboard,
   LayoutGrid,
   Clock,
   Settings,
@@ -149,6 +151,21 @@ export type Session = {
   time: string;
 };
 
+type ExecutionMode = 'auto' | 'plan' | 'execute' | 'report' | 'graph';
+
+type OfficeExecution = {
+  id: string;
+  agentId: string;
+  prompt: string;
+  mode: ExecutionMode;
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+  startedAt: string;
+  completedAt?: string;
+  durationMs?: number;
+  error?: string;
+  requestId?: string;
+};
+
 const seedSessions: Session[] = [];
 
 export default function OfficeIntelligencePage() {
@@ -169,6 +186,9 @@ export default function OfficeIntelligencePage() {
   );
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile | null>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [executionMode, setExecutionMode] = useState<ExecutionMode>('auto');
+  const [confirmIrreversible, setConfirmIrreversible] = useState(false);
+  const [executions, setExecutions] = useState<OfficeExecution[]>([]);
 
   const filteredAgents = useMemo(() => {
     if (!searchQuery) return [];
@@ -212,8 +232,10 @@ export default function OfficeIntelligencePage() {
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const sessionsStorageKey = user ? `office-intelligence-sessions:${user.id}` : null;
   const favoritesStorageKey = user ? `office-intelligence-favorites:${user.id}` : null;
+  const executionsStorageKey = user ? `office-intelligence-executions:${user.id}` : null;
   const hydratedSessionsKey = useRef<string | null>(null);
   const hydratedFavoritesKey = useRef<string | null>(null);
+  const hydratedExecutionsKey = useRef<string | null>(null);
   const appliedQueryCategory = useRef<string | null>(null);
 
   const openAgentHub = () => {
@@ -257,7 +279,14 @@ export default function OfficeIntelligencePage() {
   };
 
   useEffect(() => {
-    const categoryId = new URLSearchParams(window.location.search).get('category');
+    const params = new URLSearchParams(window.location.search);
+    const categoryId = params.get('category');
+    const agentId = params.get('agent');
+    if (agentId && getAgentById(agentId) && appliedQueryCategory.current !== `agent:${agentId}`) {
+      appliedQueryCategory.current = `agent:${agentId}`;
+      openAgent(agentId);
+      return;
+    }
     if (
       !categoryId ||
       appliedQueryCategory.current === categoryId ||
@@ -343,6 +372,30 @@ export default function OfficeIntelligencePage() {
     }
   }, [favoriteAgentIds, favoritesReady, favoritesStorageKey]);
 
+  useEffect(() => {
+    if (!executionsStorageKey || hydratedExecutionsKey.current === executionsStorageKey) return;
+
+    try {
+      const savedExecutions = window.localStorage.getItem(executionsStorageKey);
+      const parsedExecutions = savedExecutions ? JSON.parse(savedExecutions) : [];
+      setExecutions(Array.isArray(parsedExecutions) ? parsedExecutions : []);
+    } catch {
+      setExecutions([]);
+    } finally {
+      hydratedExecutionsKey.current = executionsStorageKey;
+    }
+  }, [executionsStorageKey]);
+
+  useEffect(() => {
+    if (!executionsStorageKey || hydratedExecutionsKey.current !== executionsStorageKey) return;
+
+    try {
+      window.localStorage.setItem(executionsStorageKey, JSON.stringify(executions.slice(0, 50)));
+    } catch {
+      // Execution history remains available for this page when storage is unavailable.
+    }
+  }, [executions, executionsStorageKey]);
+
   const toggleTheme = () => {
     setTheme(current => {
       const next = current === 'light' ? 'dark' : 'light';
@@ -352,6 +405,18 @@ export default function OfficeIntelligencePage() {
   };
 
   const handleSendMessage = async (agentId: string, content: string) => {
+    const executionId = `${Date.now()}-${agentId}`;
+    const startedAt = Date.now();
+    const execution: OfficeExecution = {
+      id: executionId,
+      agentId,
+      prompt: content,
+      mode: executionMode,
+      status: 'running',
+      startedAt: new Date(startedAt).toISOString(),
+    };
+    setExecutions(current => [execution, ...current].slice(0, 50));
+
     const userMessage: Message = {
       id: `${Date.now()}-user`,
       role: 'user',
@@ -425,9 +490,10 @@ export default function OfficeIntelligencePage() {
       const requestBody: Record<string, any> = {
         agent_id: agentId,
         prompt: content,
-        mode: 'auto',
+        mode: executionMode,
         top_k: 5,
         use_langchain: true,
+        confirm: confirmIrreversible,
       };
 
       if (agentId === 'sql-analyst' && uploadedFile && uploadedFile.isDbFile) {
@@ -445,9 +511,25 @@ export default function OfficeIntelligencePage() {
       });
 
       const payload = await response.json();
+      const completedAt = Date.now();
       const assistantContent = response.ok
         ? (payload.answer ?? 'No answer returned from backend.')
-        : `Error: ${payload.error ?? payload.detail ?? 'Agent request failed.'}`;
+        : `Error: ${typeof payload.error === 'string' ? payload.error : (payload.detail?.message ?? payload.detail ?? 'Agent request failed.')}`;
+
+      setExecutions(current =>
+        current.map(item =>
+          item.id === executionId
+            ? {
+                ...item,
+                status: response.ok ? 'completed' : 'failed',
+                completedAt: new Date(completedAt).toISOString(),
+                durationMs: completedAt - startedAt,
+                error: response.ok ? undefined : assistantContent,
+                requestId: response.headers.get('x-request-id') || undefined,
+              }
+            : item
+        )
+      );
 
       setChatMessages(current => ({
         ...current,
@@ -467,7 +549,21 @@ export default function OfficeIntelligencePage() {
         ],
       }));
     } catch (error) {
+      const completedAt = Date.now();
       const message = error instanceof Error ? error.message : String(error);
+      setExecutions(current =>
+        current.map(item =>
+          item.id === executionId
+            ? {
+                ...item,
+                status: 'failed',
+                completedAt: new Date(completedAt).toISOString(),
+                durationMs: completedAt - startedAt,
+                error: message,
+              }
+            : item
+        )
+      );
       setChatMessages(current => ({
         ...current,
         [agentId]: [
@@ -809,6 +905,14 @@ export default function OfficeIntelligencePage() {
             >
               <Plus className="w-3.5 h-3.5" /> New session
             </button>
+            <Link
+              href="/office-intelligence/dashboard"
+              aria-label="Open Office Intelligence dashboard"
+              title="Office Intelligence dashboard"
+              className="flex h-8 w-8 items-center justify-center rounded-[8px] text-[#4a4945] transition-colors hover:bg-[#efebe6]"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+            </Link>
             <button
               type="button"
               aria-label="Return to Agent hub"
@@ -1017,7 +1121,31 @@ export default function OfficeIntelligencePage() {
                   </div>
                 </div>
 
-                <div className="px-4 py-2 border-b border-[var(--border-default)] flex items-center gap-2 bg-[var(--bg-surface)]">
+                <div className="px-4 py-2 border-b border-[var(--border-default)] flex flex-wrap items-center gap-2 bg-[var(--bg-surface)]">
+                  <label className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+                    <span>Run mode</span>
+                    <select
+                      value={executionMode}
+                      onChange={event => setExecutionMode(event.target.value as ExecutionMode)}
+                      className="rounded-md border border-[var(--border-default)] bg-[var(--bg-page)] px-2 py-1 text-[11px] text-[var(--text-primary)]"
+                    >
+                      <option value="auto">Auto chat</option>
+                      <option value="plan">Plan preview</option>
+                      <option value="execute">Execute workflow</option>
+                      <option value="report">Generate report</option>
+                      <option value="graph">LangGraph</option>
+                    </select>
+                  </label>
+                  {(executionMode === 'execute' || executionMode === 'graph') && (
+                    <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)]">
+                      <input
+                        type="checkbox"
+                        checked={confirmIrreversible}
+                        onChange={event => setConfirmIrreversible(event.target.checked)}
+                      />
+                      Confirm actions
+                    </label>
+                  )}
                   <button
                     onClick={() => setActivePanel('data')}
                     className={`text-sm px-3 py-1 rounded-full transition-colors duration-150 ${activePanel === 'data' ? 'border border-[var(--border-default)] bg-[var(--bg-page)] text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-subtle)]'}`}

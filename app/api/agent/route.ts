@@ -116,10 +116,15 @@ export async function POST(request: NextRequest) {
         : { detail: await response.text() };
 
       if (!response.ok) {
+        const workerError = payload?.detail || payload?.error;
+        const errorMessage =
+          typeof workerError === 'string'
+            ? workerError
+            : workerError?.message || 'Office Intelligence request failed.';
         return NextResponse.json(
           {
             ok: false,
-            error: payload?.detail || payload?.error || 'Office Intelligence request failed.',
+            error: errorMessage,
             request_id: requestId,
             details: payload,
           },
