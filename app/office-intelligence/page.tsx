@@ -13,6 +13,8 @@ import {
   Search,
   Sun,
   Star,
+  CircleStop,
+  LoaderCircle,
   Cpu,
   FileText,
   Users,
@@ -189,6 +191,9 @@ export default function OfficeIntelligencePage() {
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('auto');
   const [confirmIrreversible, setConfirmIrreversible] = useState(false);
   const [executions, setExecutions] = useState<OfficeExecution[]>([]);
+  const [executionPhase, setExecutionPhase] = useState('Ready to run');
+  const activeRequestRef = useRef<AbortController | null>(null);
+  const activeExecutionIdRef = useRef<string | null>(null);
 
   const filteredAgents = useMemo(() => {
     if (!searchQuery) return [];
@@ -405,6 +410,8 @@ export default function OfficeIntelligencePage() {
   };
 
   const handleSendMessage = async (agentId: string, content: string) => {
+    if (isLoading) return;
+
     const executionId = `${Date.now()}-${agentId}`;
     const startedAt = Date.now();
     const execution: OfficeExecution = {
@@ -416,6 +423,7 @@ export default function OfficeIntelligencePage() {
       startedAt: new Date(startedAt).toISOString(),
     };
     setExecutions(current => [execution, ...current].slice(0, 50));
+    activeExecutionIdRef.current = executionId;
 
     const userMessage: Message = {
       id: `${Date.now()}-user`,
@@ -430,6 +438,7 @@ export default function OfficeIntelligencePage() {
     }));
 
     const uploadedFile = uploadedFiles[agentId];
+    const agent = getAgentById(agentId);
     openAgent(agentId);
 
     if ((agentId === 'csv-analyst' || agentId === 'financial-data') && !uploadedFile) {
@@ -484,7 +493,34 @@ export default function OfficeIntelligencePage() {
       return;
     }
 
+    if (agent?.acceptedFiles.length && !uploadedFile) {
+      setChatMessages(current => ({
+        ...current,
+        [agentId]: [
+          ...(current[agentId] || []),
+          {
+            id: `${Date.now()}-assistant-file-required`,
+            role: 'assistant',
+            content: `Please upload one of the supported files first: ${agent.acceptedFiles.join(', ')}.`,
+            timestamp: new Date(),
+          },
+        ],
+      }));
+      return;
+    }
+
     setIsLoading(true);
+    setExecutionPhase(
+      executionMode === 'plan'
+        ? 'Building execution plan'
+        : executionMode === 'report'
+          ? 'Generating report'
+          : executionMode === 'graph'
+            ? 'Running LangGraph workflow'
+            : 'Analyzing your request'
+    );
+    const abortController = new AbortController();
+    activeRequestRef.current = abortController;
 
     try {
       const requestBody: Record<string, any> = {
@@ -498,16 +534,15 @@ export default function OfficeIntelligencePage() {
 
       if (agentId === 'sql-analyst' && uploadedFile && uploadedFile.isDbFile) {
         requestBody.db_file = uploadedFile.content;
-      } else if (agentId === 'word-analyst') {
+      } else if (uploadedFile) {
         requestBody.file_path = uploadedFile?.content;
-      } else {
-        requestBody.table_csv = uploadedFile?.content;
       }
 
       const response = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
         body: JSON.stringify(requestBody),
+        signal: abortController.signal,
       });
 
       const payload = await response.json();
@@ -550,16 +585,17 @@ export default function OfficeIntelligencePage() {
       }));
     } catch (error) {
       const completedAt = Date.now();
+      const wasCancelled = error instanceof DOMException && error.name === 'AbortError';
       const message = error instanceof Error ? error.message : String(error);
       setExecutions(current =>
         current.map(item =>
           item.id === executionId
             ? {
                 ...item,
-                status: 'failed',
+                status: wasCancelled ? 'cancelled' : 'failed',
                 completedAt: new Date(completedAt).toISOString(),
                 durationMs: completedAt - startedAt,
-                error: message,
+                error: wasCancelled ? 'Execution cancelled by the user.' : message,
               }
             : item
         )
@@ -571,14 +607,24 @@ export default function OfficeIntelligencePage() {
           {
             id: `${Date.now()}-assistant-error`,
             role: 'assistant',
-            content: `Unable to connect to backend: ${message}`,
+            content: wasCancelled
+              ? 'Execution cancelled. The worker request was closed from this browser.'
+              : `Unable to connect to backend: ${message}`,
             timestamp: new Date(),
           },
         ],
       }));
     } finally {
       setIsLoading(false);
+      setExecutionPhase('Ready to run');
+      activeRequestRef.current = null;
+      activeExecutionIdRef.current = null;
     }
+  };
+
+  const cancelActiveExecution = () => {
+    if (!activeRequestRef.current || !activeExecutionIdRef.current) return;
+    activeRequestRef.current.abort();
   };
 
   const handleFileUpload = async (agentId: string, file: File) => {
@@ -746,7 +792,7 @@ export default function OfficeIntelligencePage() {
   return (
     <AuthGuard>
       <div className="office-intelligence-shell flex h-screen overflow-hidden bg-[#f4f1ed] text-[var(--text-primary)]">
-        <aside className="w-[240px] min-w-[240px] bg-[#e9e4dd] border-r border-[#d7d0c8] flex flex-col h-full overflow-hidden">
+        <aside className="hidden w-[240px] min-w-[240px] bg-[#e9e4dd] border-r border-[#d7d0c8] md:flex md:flex-col h-full overflow-hidden">
           <div className="h-[72px] border-b border-[#d7d0c8] px-3.5 py-2.5 flex items-center gap-3 bg-[#e9e4dd]">
             <div className="w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#f3efe9] text-[#1d1d1d] border border-[#d7d0c8] shadow-[0_1px_0_rgba(17,24,39,0.04)]">
               <Cpu className="w-4 h-4" />
@@ -1116,8 +1162,11 @@ export default function OfficeIntelligencePage() {
                   <div className="text-sm font-medium text-[var(--text-primary)] flex-1">
                     {activeCategory?.name}
                   </div>
-                  <div className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--bg-subtle)] text-[var(--text-secondary)] border border-[var(--border-default)] leading-none">
-                    ready
+                  <div
+                    className={`flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full border leading-none ${isLoading ? 'border-amber-300 bg-amber-50 text-amber-700' : 'bg-[var(--bg-subtle)] text-[var(--text-secondary)] border-[var(--border-default)]'}`}
+                  >
+                    {isLoading && <LoaderCircle className="h-3 w-3 animate-spin" />}
+                    {isLoading ? executionPhase : 'ready'}
                   </div>
                 </div>
 
@@ -1255,7 +1304,9 @@ export default function OfficeIntelligencePage() {
                         <div className="text-[13px] leading-relaxed rounded-[10px] px-3 py-2 border-l-2 bg-[var(--bg-page)] border-[var(--border-strong)]">
                           <div className="flex items-center gap-2">
                             <div className="h-3 w-3 rounded-full bg-[var(--text-tertiary)] animate-pulse" />
-                            <div className="text-[13px] text-[var(--text-primary)]">Analyzing…</div>
+                            <div className="text-[13px] text-[var(--text-primary)]">
+                              {executionPhase}…
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1278,19 +1329,30 @@ export default function OfficeIntelligencePage() {
                         }}
                         className="flex-1 rounded-md border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-strong)]"
                       />
-                      <button
-                        onClick={() => {
-                          const input = document.querySelector<HTMLInputElement>('#office-input');
-                          const value = input?.value.trim();
-                          if (value && activeAgentId && input) {
-                            handleSendMessage(activeAgentId, value);
-                            input.value = '';
-                          }
-                        }}
-                        className="rounded-md px-3 py-2 text-sm font-medium bg-[var(--bg-subtle)] text-[var(--text-primary)] border border-[var(--border-default)]"
-                      >
-                        Send
-                      </button>
+                      {isLoading ? (
+                        <button
+                          type="button"
+                          onClick={cancelActiveExecution}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+                        >
+                          <CircleStop className="h-4 w-4" /> Stop
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const input = document.querySelector<HTMLInputElement>('#office-input');
+                            const value = input?.value.trim();
+                            if (value && activeAgentId && input) {
+                              handleSendMessage(activeAgentId, value);
+                              input.value = '';
+                            }
+                          }}
+                          className="rounded-md bg-[var(--button-bg)] px-3 py-2 text-sm font-medium text-[var(--button-text)] hover:opacity-90"
+                        >
+                          Run analysis
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
