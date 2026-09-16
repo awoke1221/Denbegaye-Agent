@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getOfficeIntelligenceUser } from '@/lib/office-intelligence-auth';
 import { getOfficeIntelligenceServiceToken } from '@/lib/office-intelligence-service-auth';
+import { buildExecutionRequest } from '@/lib/execution-contract';
 
 const officeIntelligenceUrl = process.env.OFFICE_INTELLIGENCE_URL || 'http://localhost:8000';
 const officeIntelligenceMockEnabled = process.env.OFFICE_INTELLIGENCE_MOCK === 'true';
@@ -75,6 +76,8 @@ export async function POST(request: NextRequest) {
       db_file,
       top_k = 5,
       confirm = false,
+      execution_id,
+      trace_id,
     } = body || {};
 
     if (!agent_id || !prompt || !String(prompt).trim()) {
@@ -85,8 +88,8 @@ export async function POST(request: NextRequest) {
     }
 
     const requestId = request.headers.get('x-request-id') || randomUUID();
-    const serviceToken = getOfficeIntelligenceServiceToken();
-    const workerPayload = {
+    const serviceToken = getOfficeIntelligenceServiceToken(user);
+    const workerPayload = buildExecutionRequest({
       agent_id,
       prompt,
       mode,
@@ -97,7 +100,11 @@ export async function POST(request: NextRequest) {
       db_file,
       top_k,
       confirm,
-    };
+      execution_id,
+      trace_id,
+    });
+    workerPayload.execution_id = workerPayload.execution_id || requestId;
+    workerPayload.trace_id = workerPayload.trace_id || `trace_${requestId}`;
 
     try {
       const response = await fetch(`${officeIntelligenceUrl.replace(/\/$/, '')}/agent/run`, {

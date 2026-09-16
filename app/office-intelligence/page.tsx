@@ -526,6 +526,8 @@ export default function OfficeIntelligencePage() {
       const requestBody: Record<string, any> = {
         agent_id: agentId,
         prompt: content,
+        execution_id: executionId,
+        trace_id: `trace_${executionId}`,
         mode: executionMode,
         top_k: 5,
         use_langchain: true,
@@ -550,12 +552,14 @@ export default function OfficeIntelligencePage() {
       const assistantContent = response.ok
         ? (payload.answer ?? 'No answer returned from backend.')
         : `Error: ${typeof payload.error === 'string' ? payload.error : (payload.detail?.message ?? payload.detail ?? 'Agent request failed.')}`;
+      const backendExecutionId = payload.execution_id ?? executionId;
 
       setExecutions(current =>
         current.map(item =>
           item.id === executionId
             ? {
                 ...item,
+                id: backendExecutionId,
                 status: response.ok ? 'completed' : 'failed',
                 completedAt: new Date(completedAt).toISOString(),
                 durationMs: completedAt - startedAt,
