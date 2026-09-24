@@ -25,11 +25,13 @@ function getStoredAccessToken(): string | null {
   return null;
 }
 
-export function getSharedSocket(backendUrl?: string): Socket {
+export function getSharedSocket(backendUrl?: string, accessToken?: string | null): Socket {
   const url = backendUrl || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
-  const token = getStoredAccessToken();
+  const token = accessToken === undefined ? getStoredAccessToken() : accessToken;
 
-  if (sharedSocket && sharedSocketUrl === url && token) {
+  if (sharedSocket && sharedSocketUrl === url) {
+    sharedSocket.auth = token ? { token } : {};
+    if (token && !sharedSocket.connected) sharedSocket.connect();
     return sharedSocket;
   }
 

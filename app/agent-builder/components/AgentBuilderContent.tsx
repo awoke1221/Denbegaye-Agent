@@ -1541,7 +1541,7 @@ function AgentBuilderContent({ initialSection = 'builder' }: AgentBuilderContent
       }
 
       const proposedExecutionId = crypto.randomUUID();
-      const socket = getSharedSocket();
+      const socket = getSharedSocket(backendUrl, accessToken);
       socket.emit('subscribe:execution', proposedExecutionId);
 
       // Determine the execution strategy: auto-detect from nodes or use user selection
@@ -1564,7 +1564,7 @@ function AgentBuilderContent({ initialSection = 'builder' }: AgentBuilderContent
       };
       if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
-      const response = await fetch(`${backendUrl}/api/agent-run`, {
+      const response = await fetch('/api/agent-run', {
         method: 'POST',
         headers,
         credentials: 'include',
