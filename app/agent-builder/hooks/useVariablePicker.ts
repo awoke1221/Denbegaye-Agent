@@ -98,7 +98,8 @@ export function useVariablePicker(
       if (sampleCache[nodeId]) return;
 
       const nodeTypeId = node.data?.type || node.type || '';
-      const url = `http://localhost:3001/api/sample-outputs?nodeType=${encodeURIComponent(nodeTypeId)}`;
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const url = `${backendUrl.replace(/\/$/, '')}/api/sample-outputs?nodeType=${encodeURIComponent(nodeTypeId)}`;
       fetch(url)
         .then(r => (r.ok ? r.json() : Promise.reject(new Error('fetch failed'))))
         .then(json => {

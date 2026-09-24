@@ -73,13 +73,18 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Office Intelligence upload failed:', error);
+    const details = error instanceof Error ? error.message : 'Unknown upload error';
+    const authConfigurationError = details.includes('OFFICE_INTELLIGENCE_SHARED_SECRET');
+
     return NextResponse.json(
       {
         ok: false,
-        error: 'Office Intelligence upload service is unavailable.',
-        details: error instanceof Error ? error.message : 'Unknown upload error',
+        error: authConfigurationError
+          ? 'Office Intelligence authentication is not configured.'
+          : 'Office Intelligence upload service is unavailable.',
+        details,
       },
-      { status: 502 }
+      { status: authConfigurationError ? 503 : 502 }
     );
   }
 }

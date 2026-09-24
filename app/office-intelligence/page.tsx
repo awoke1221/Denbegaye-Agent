@@ -537,7 +537,12 @@ export default function OfficeIntelligencePage() {
       if (agentId === 'sql-analyst' && uploadedFile && uploadedFile.isDbFile) {
         requestBody.db_file = uploadedFile.content;
       } else if (uploadedFile) {
-        requestBody.file_path = uploadedFile?.content;
+        requestBody.file_path = uploadedFile.content;
+      }
+
+      if (uploadedFile) {
+        requestBody.file_name = uploadedFile.name;
+        requestBody.file_type = uploadedFile.type;
       }
 
       const response = await fetch('/api/agent', {

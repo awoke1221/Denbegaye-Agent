@@ -3,9 +3,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOfficeIntelligenceUser } from '@/lib/office-intelligence-auth';
 import { getOfficeIntelligenceServiceToken } from '@/lib/office-intelligence-service-auth';
 import { buildExecutionRequest } from '@/lib/execution-contract';
+import { supabaseAdmin } from '@/lib/supabaseClient';
 
 const officeIntelligenceUrl = process.env.OFFICE_INTELLIGENCE_URL || 'http://localhost:8000';
 const officeIntelligenceMockEnabled = process.env.OFFICE_INTELLIGENCE_MOCK === 'true';
+
+async function recordOfficeExecution(record: {
+  execution_id: string;
+  user_id: string;
+  agent_id: string;
+  mode: string;
+  status: 'completed' | 'failed' | 'waiting_for_approval';
+  prompt: string;
+  input_metadata: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  error_message?: string;
+  request_id: string;
+}) {
+  if (!supabaseAdmin) return;
+
+  const { error } = await supabaseAdmin.from('office_executions').insert(record);
+  if (error) {
+    console.error('Failed to persist Office Intelligence execution:', error.message);
+  }
+}
 
 function createLocalResponse(agentId: string, prompt: string, metadata?: Record<string, unknown>) {
   const normalizedPrompt = prompt.trim();
@@ -128,6 +149,22 @@ export async function POST(request: NextRequest) {
           typeof workerError === 'string'
             ? workerError
             : workerError?.message || 'Office Intelligence request failed.';
+        await recordOfficeExecution({
+          execution_id: workerPayload.execution_id as string,
+          user_id: user.id,
+          agent_id: String(agent_id),
+          mode: String(mode),
+          status: response.status === 409 ? 'waiting_for_approval' : 'failed',
+          prompt: String(prompt),
+          input_metadata: {
+            top_k,
+            use_langchain: Boolean(use_langchain),
+            file_path: Boolean(file_path),
+            db_file: Boolean(db_file),
+          },
+          error_message: errorMessage,
+          request_id: requestId,
+        });
         return NextResponse.json(
           {
             ok: false,
@@ -138,6 +175,23 @@ export async function POST(request: NextRequest) {
           { status: response.status }
         );
       }
+
+      await recordOfficeExecution({
+        execution_id: String(payload.execution_id || workerPayload.execution_id),
+        user_id: user.id,
+        agent_id: String(agent_id),
+        mode: String(mode),
+        status: 'completed',
+        prompt: String(prompt),
+        input_metadata: {
+          top_k,
+          use_langchain: Boolean(use_langchain),
+          file_path: Boolean(file_path),
+          db_file: Boolean(db_file),
+        },
+        output: payload,
+        request_id: requestId,
+      });
 
       return NextResponse.json(payload, {
         headers: { 'x-request-id': requestId },

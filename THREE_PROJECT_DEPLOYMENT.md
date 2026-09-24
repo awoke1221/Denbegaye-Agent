@@ -64,7 +64,9 @@ Required Vercel variables:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `OFFICE_INTELLIGENCE_URL`: Python Render service URL
+- `NEXT_PUBLIC_BACKEND_URL=https://denbegaye-agent-workers.onrender.com`
+- `NEXT_PUBLIC_WORKERS_URL=https://denbegaye-agent-workers.onrender.com`
+- `OFFICE_INTELLIGENCE_URL=https://office-intelegence-workers-agent.onrender.com`
 - `OFFICE_INTELLIGENCE_SHARED_SECRET`: same value as Python Render
 - `OFFICE_INTELLIGENCE_MOCK=false`
 - `NEXT_PUBLIC_APP_URL`: deployed Vercel origin
