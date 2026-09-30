@@ -3,7 +3,7 @@ VALUES (
     'office-intelligence-uploads',
     'office-intelligence-uploads',
     false,
-    104857600
+    52428800
 )
 ON CONFLICT (id) DO UPDATE
 SET

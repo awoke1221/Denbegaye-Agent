@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabaseClient';
 export const runtime = 'nodejs';
 
 const uploadBucket = 'office-intelligence-uploads';
-const maxUploadBytes = 100 * 1024 * 1024;
+const maxUploadBytes = 50 * 1024 * 1024;
 const allowedExtensions = new Set([
   '.db',
   '.sqlite',
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
   }
   if (size > maxUploadBytes) {
     return NextResponse.json(
-      { ok: false, error: 'File exceeds the 100 MB upload limit.' },
+      { ok: false, error: 'File exceeds the 50 MB upload limit.' },
       { status: 413 }
     );
   }
