@@ -94,6 +94,9 @@ export async function POST(request: NextRequest) {
       table_csv,
       table_json,
       file_path,
+      storage_path,
+      file_name,
+      file_type,
       db_file,
       top_k = 5,
       confirm = false,
@@ -110,7 +113,11 @@ export async function POST(request: NextRequest) {
 
     const requestId = request.headers.get('x-request-id') || randomUUID();
     const serviceToken = getOfficeIntelligenceServiceToken(user);
-    const workerPayload = buildExecutionRequest({
+    const workerPayload: ReturnType<typeof buildExecutionRequest> & {
+      file_url?: string;
+      file_name?: string;
+      file_type?: string;
+    } = buildExecutionRequest({
       agent_id,
       prompt,
       mode,
@@ -126,6 +133,42 @@ export async function POST(request: NextRequest) {
     });
     workerPayload.execution_id = workerPayload.execution_id || requestId;
     workerPayload.trace_id = workerPayload.trace_id || `trace_${requestId}`;
+
+    if (storage_path) {
+      if (!supabaseAdmin) {
+        return NextResponse.json(
+          { ok: false, error: 'Supabase server storage is not configured.' },
+          { status: 503 }
+        );
+      }
+      if (
+        typeof storage_path !== 'string' ||
+        !storage_path.startsWith(`${user.id}/`) ||
+        storage_path.includes('..')
+      ) {
+        return NextResponse.json(
+          { ok: false, error: 'Invalid uploaded file path.' },
+          { status: 403 }
+        );
+      }
+
+      const { data: signedFile, error: signedFileError } = await supabaseAdmin.storage
+        .from('office-intelligence-uploads')
+        .createSignedUrl(storage_path, 600);
+      if (signedFileError || !signedFile) {
+        console.error(
+          'Failed to create Office Intelligence download URL:',
+          signedFileError?.message
+        );
+        return NextResponse.json(
+          { ok: false, error: 'Could not prepare the uploaded file for analysis.' },
+          { status: 502 }
+        );
+      }
+      workerPayload.file_url = signedFile.signedUrl;
+      workerPayload.file_name = typeof file_name === 'string' ? file_name : '';
+      workerPayload.file_type = typeof file_type === 'string' ? file_type : '';
+    }
 
     try {
       const response = await fetch(`${officeIntelligenceUrl.replace(/\/$/, '')}/agent/run`, {
@@ -159,7 +202,7 @@ export async function POST(request: NextRequest) {
           input_metadata: {
             top_k,
             use_langchain: Boolean(use_langchain),
-            file_path: Boolean(file_path),
+            file_path: Boolean(file_path || storage_path),
             db_file: Boolean(db_file),
           },
           error_message: errorMessage,
@@ -186,7 +229,7 @@ export async function POST(request: NextRequest) {
         input_metadata: {
           top_k,
           use_langchain: Boolean(use_langchain),
-          file_path: Boolean(file_path),
+          file_path: Boolean(file_path || storage_path),
           db_file: Boolean(db_file),
         },
         output: payload,

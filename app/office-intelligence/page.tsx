@@ -325,38 +325,37 @@ export default function OfficeIntelligencePage() {
   const uploadFileWithProgress = async (
     file: File,
     onProgress: (progress: number) => void
-  ): Promise<{ file_path: string }> => {
-    const formData = new FormData();
-    formData.append('file', file);
+  ): Promise<{ storage_path: string }> => {
     const headers = await getAuthHeaders();
+    const ticketResponse = await fetch('/api/upload-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ name: file.name, size: file.size }),
+    });
+    const ticket = await ticketResponse.json();
+    if (!ticketResponse.ok) {
+      throw new Error(ticket.error || 'Could not prepare the file upload.');
+    }
+
+    const formData = new FormData();
+    formData.append('cacheControl', '3600');
+    formData.append('', file);
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/upload-file');
-      Object.entries(headers).forEach(([name, value]) => xhr.setRequestHeader(name, value));
+      xhr.open('PUT', ticket.signed_url);
+      xhr.setRequestHeader('x-upsert', 'false');
       xhr.upload.addEventListener('progress', event => {
         if (event.lengthComputable) {
           onProgress(Math.round((event.loaded / event.total) * 100));
         }
       });
       xhr.addEventListener('load', () => {
-        let payload: { file_path?: string; detail?: string; error?: string };
-        try {
-          payload = JSON.parse(xhr.responseText) as typeof payload;
-        } catch {
-          reject(new Error('The upload service returned an invalid response.'));
-          return;
-        }
-
         if (xhr.status < 200 || xhr.status >= 300) {
-          reject(new Error(payload.detail || payload.error || 'Failed to upload file.'));
+          reject(new Error('Supabase Storage rejected the file upload.'));
           return;
         }
-        if (!payload.file_path) {
-          reject(new Error('The upload service did not return a file path.'));
-          return;
-        }
-        resolve({ file_path: payload.file_path });
+        resolve({ storage_path: ticket.storage_path });
       });
       xhr.addEventListener('error', () => reject(new Error('Network error while uploading file.')));
       xhr.addEventListener('abort', () => reject(new Error('Upload was cancelled.')));
@@ -585,13 +584,8 @@ export default function OfficeIntelligencePage() {
         confirm: confirmIrreversible,
       };
 
-      if (agentId === 'sql-analyst' && uploadedFile && uploadedFile.isDbFile) {
-        requestBody.db_file = uploadedFile.content;
-      } else if (uploadedFile) {
-        requestBody.file_path = uploadedFile.content;
-      }
-
       if (uploadedFile) {
+        requestBody.storage_path = uploadedFile.content;
         requestBody.file_name = uploadedFile.name;
         requestBody.file_type = uploadedFile.type;
       }
@@ -711,7 +705,7 @@ export default function OfficeIntelligencePage() {
           : isWordDocument
             ? file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             : file.type || 'application/octet-stream',
-        content: data.file_path,
+        content: data.storage_path,
         ...(isDbFile ? { isDbFile: true } : {}),
       };
       setUploadedFiles(current => ({
