@@ -145,6 +145,13 @@ export type UploadedFile = {
   isDbFile?: boolean;
 };
 
+type UploadState = {
+  name: string;
+  progress: number;
+  status: 'uploading' | 'complete' | 'error';
+  message?: string;
+};
+
 export type Session = {
   id: string;
   agentId: string;
@@ -187,6 +194,7 @@ export default function OfficeIntelligencePage() {
       Object.fromEntries(OFFICE_AGENTS.map(agent => [agent.id, []])) as Record<string, Message[]>
   );
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile | null>>({});
+  const [uploadStates, setUploadStates] = useState<Record<string, UploadState>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('auto');
   const [confirmIrreversible, setConfirmIrreversible] = useState(false);
@@ -220,6 +228,7 @@ export default function OfficeIntelligencePage() {
 
   const activeAgent = activeAgentId ? getAgentById(activeAgentId) : undefined;
   const activeCategory = activeAgent ? getCategoryById(activeAgent.categoryId) : undefined;
+  const activeUpload = activeAgentId ? uploadStates[activeAgentId] : undefined;
   const selectedCategoryName = selectedCategoryId
     ? OFFICE_CATEGORIES.find(category => category.id === selectedCategoryId)?.name
     : null;
@@ -311,6 +320,48 @@ export default function OfficeIntelligencePage() {
       headers.Authorization = `Bearer ${data.session.access_token}`;
     }
     return headers;
+  };
+
+  const uploadFileWithProgress = async (
+    file: File,
+    onProgress: (progress: number) => void
+  ): Promise<{ file_path: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const headers = await getAuthHeaders();
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/upload-file');
+      Object.entries(headers).forEach(([name, value]) => xhr.setRequestHeader(name, value));
+      xhr.upload.addEventListener('progress', event => {
+        if (event.lengthComputable) {
+          onProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      });
+      xhr.addEventListener('load', () => {
+        let payload: { file_path?: string; detail?: string; error?: string };
+        try {
+          payload = JSON.parse(xhr.responseText) as typeof payload;
+        } catch {
+          reject(new Error('The upload service returned an invalid response.'));
+          return;
+        }
+
+        if (xhr.status < 200 || xhr.status >= 300) {
+          reject(new Error(payload.detail || payload.error || 'Failed to upload file.'));
+          return;
+        }
+        if (!payload.file_path) {
+          reject(new Error('The upload service did not return a file path.'));
+          return;
+        }
+        resolve({ file_path: payload.file_path });
+      });
+      xhr.addEventListener('error', () => reject(new Error('Network error while uploading file.')));
+      xhr.addEventListener('abort', () => reject(new Error('Upload was cancelled.')));
+      xhr.send(formData);
+    });
   };
 
   useEffect(() => {
@@ -640,134 +691,36 @@ export default function OfficeIntelligencePage() {
     const ext = file.name.split('.').pop()?.toLowerCase();
     const isDbFile = ext === 'db' || ext === 'sqlite' || ext === 'sqlite3' || ext === 'sql';
     const isWordDocument = ext === 'docx';
-
-    if (isDbFile) {
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const response = await fetch('/api/upload-file', {
-          method: 'POST',
-          headers: await getAuthHeaders(),
-          body: formData,
-        });
-        const data = await response.json();
-        if (!response.ok)
-          throw new Error(data.detail || data.error || 'Failed to upload database file.');
-
-        const uploaded: UploadedFile = {
-          name: file.name,
-          size: `${Math.round(file.size / 1024)} KB`,
-          type: 'application/x-sqlite3',
-          content: data.file_path,
-          isDbFile: true,
-        };
-
-        setUploadedFiles(current => ({ ...current, [agentId]: uploaded }));
-        setChatMessages(current => ({
-          ...current,
-          [agentId]: [
-            ...(current[agentId] || []),
-            {
-              id: `${Date.now()}-user-upload`,
-              role: 'user',
-              content: `Uploaded database file: ${file.name}`,
-              timestamp: new Date(),
-            },
-          ],
-        }));
-        return;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        setChatMessages(current => ({
-          ...current,
-          [agentId]: [
-            ...(current[agentId] || []),
-            {
-              id: `${Date.now()}-assistant-upload-error`,
-              role: 'assistant',
-              content: `Failed to upload database file: ${message}`,
-              timestamp: new Date(),
-            },
-          ],
-        }));
-        return;
-      }
-    }
-
-    if (isWordDocument) {
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const response = await fetch('/api/upload-file', {
-          method: 'POST',
-          headers: await getAuthHeaders(),
-          body: formData,
-        });
-        const data = await response.json();
-        if (!response.ok)
-          throw new Error(data.detail || data.error || 'Failed to upload Word document.');
-
-        const uploaded: UploadedFile = {
-          name: file.name,
-          size: `${Math.round(file.size / 1024)} KB`,
-          type:
-            file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          content: data.file_path,
-        };
-
-        setUploadedFiles(current => ({ ...current, [agentId]: uploaded }));
-        setChatMessages(current => ({
-          ...current,
-          [agentId]: [
-            ...(current[agentId] || []),
-            {
-              id: `${Date.now()}-user-upload`,
-              role: 'user',
-              content: `Uploaded document: ${file.name}`,
-              timestamp: new Date(),
-            },
-          ],
-        }));
-        return;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        setChatMessages(current => ({
-          ...current,
-          [agentId]: [
-            ...(current[agentId] || []),
-            {
-              id: `${Date.now()}-assistant-upload-error`,
-              role: 'assistant',
-              content: `Failed to upload document: ${message}`,
-              timestamp: new Date(),
-            },
-          ],
-        }));
-        return;
-      }
-    }
-
+    const fileKind = isDbFile ? 'database file' : isWordDocument ? 'document' : 'file';
+    setUploadStates(current => ({
+      ...current,
+      [agentId]: { name: file.name, progress: 0, status: 'uploading' },
+    }));
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await fetch('/api/upload-file', {
-        method: 'POST',
-        headers: await getAuthHeaders(),
-        body: formData,
+      const data = await uploadFileWithProgress(file, progress => {
+        setUploadStates(current => ({
+          ...current,
+          [agentId]: { name: file.name, progress, status: 'uploading' },
+        }));
       });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || data.error || 'Failed to upload file.');
-      }
-
+      const uploaded: UploadedFile = {
+        name: file.name,
+        size: `${Math.round(file.size / 1024)} KB`,
+        type: isDbFile
+          ? 'application/x-sqlite3'
+          : isWordDocument
+            ? file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            : file.type || 'application/octet-stream',
+        content: data.file_path,
+        ...(isDbFile ? { isDbFile: true } : {}),
+      };
       setUploadedFiles(current => ({
         ...current,
-        [agentId]: {
-          name: file.name,
-          size: `${Math.round(file.size / 1024)} KB`,
-          type: file.type || 'application/octet-stream',
-          content: data.file_path,
-        },
+        [agentId]: uploaded,
+      }));
+      setUploadStates(current => ({
+        ...current,
+        [agentId]: { name: file.name, progress: 100, status: 'complete' },
       }));
       setChatMessages(current => ({
         ...current,
@@ -776,13 +729,22 @@ export default function OfficeIntelligencePage() {
           {
             id: `${Date.now()}-user-upload`,
             role: 'user',
-            content: `Uploaded file: ${file.name}`,
+            content: `Uploaded ${fileKind}: ${file.name}`,
             timestamp: new Date(),
           },
         ],
       }));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      setUploadStates(current => ({
+        ...current,
+        [agentId]: {
+          name: file.name,
+          progress: current[agentId]?.progress ?? 0,
+          status: 'error',
+          message,
+        },
+      }));
       setChatMessages(current => ({
         ...current,
         [agentId]: [
@@ -790,7 +752,7 @@ export default function OfficeIntelligencePage() {
           {
             id: `${Date.now()}-assistant-upload-error`,
             role: 'assistant',
-            content: `Failed to upload file: ${message}`,
+            content: `Failed to upload ${fileKind}: ${message}`,
             timestamp: new Date(),
           },
         ],
@@ -1372,6 +1334,44 @@ export default function OfficeIntelligencePage() {
                   <h3 className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--text-tertiary)] mb-2.5">
                     Data source
                   </h3>
+                  {activeUpload && activeUpload.status !== 'complete' && (
+                    <div
+                      role={activeUpload.status === 'error' ? 'alert' : 'status'}
+                      aria-live="polite"
+                      className="mb-3 rounded-md border border-[var(--border-default)] bg-[var(--bg-surface)] px-3 py-2.5"
+                    >
+                      <div className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="min-w-0 truncate font-medium text-[var(--text-primary)]">
+                          {activeUpload.name}
+                        </span>
+                        <span className="shrink-0 text-[var(--text-secondary)]">
+                          {activeUpload.status === 'error'
+                            ? 'Upload failed'
+                            : activeUpload.progress >= 100
+                              ? 'Finishing…'
+                              : `Uploading ${activeUpload.progress}%`}
+                        </span>
+                      </div>
+                      <div
+                        role="progressbar"
+                        aria-label={`Upload progress for ${activeUpload.name}`}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={activeUpload.progress}
+                        className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--bg-subtle)]"
+                      >
+                        <div
+                          className={`h-full transition-[width] duration-200 ${activeUpload.status === 'error' ? 'bg-red-500' : 'bg-[var(--button-bg)]'}`}
+                          style={{ width: `${activeUpload.progress}%` }}
+                        />
+                      </div>
+                      {activeUpload.message && (
+                        <p className="mt-2 break-words text-[10px] text-red-600">
+                          {activeUpload.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {uploadedFiles[activeAgentId!] ? (
                     <>
                       <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] px-3 py-2 text-[11px] text-[var(--text-secondary)]">
@@ -1379,18 +1379,28 @@ export default function OfficeIntelligencePage() {
                           {uploadedFiles[activeAgentId!]?.name}
                         </div>
                         <div>{uploadedFiles[activeAgentId!]?.size}</div>
+                        {activeUpload?.status === 'complete' && (
+                          <div className="mt-1 text-emerald-700">Upload complete</div>
+                        )}
                       </div>
                       <button
-                        onClick={() =>
-                          setUploadedFiles(current => ({ ...current, [activeAgentId!]: null }))
-                        }
+                        onClick={() => {
+                          setUploadedFiles(current => ({ ...current, [activeAgentId!]: null }));
+                          setUploadStates(current => {
+                            const next = { ...current };
+                            delete next[activeAgentId!];
+                            return next;
+                          });
+                        }}
                         className="mt-3 text-[11px] text-red-500"
                       >
                         Remove file
                       </button>
                     </>
                   ) : (
-                    <label className="w-full border border-dashed border-[var(--border-strong)] rounded-lg p-4 text-center cursor-pointer hover:bg-[var(--bg-subtle)] transition-colors flex flex-col items-center bg-[var(--bg-surface)]">
+                    <label
+                      className={`w-full border border-dashed border-[var(--border-strong)] rounded-lg p-4 text-center cursor-pointer hover:bg-[var(--bg-subtle)] transition-colors flex flex-col items-center bg-[var(--bg-surface)] ${activeUpload?.status === 'uploading' ? 'pointer-events-none opacity-70' : ''}`}
+                    >
                       <FileText className="w-5 h-5 text-[var(--text-tertiary)] mx-auto mb-1" />
                       <div className="text-[11px] text-[var(--text-secondary)] mb-0.5">
                         Drop file or click to upload
@@ -1402,6 +1412,7 @@ export default function OfficeIntelligencePage() {
                         type="file"
                         accept={activeAgent?.acceptedFiles.join(',') || ''}
                         className="hidden"
+                        disabled={activeUpload?.status === 'uploading'}
                         onChange={async event => {
                           const file = event.target.files?.[0];
                           if (file && activeAgentId) {
